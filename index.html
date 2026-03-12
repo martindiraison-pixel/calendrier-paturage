@@ -1063,7 +1063,12 @@ function pushMoveToSheet(move){
     if(!sec){ _setSheetLast("disabled","secret manquant"); return false; }
     if(!move || !move.id){ _setSheetLast("error","move invalide"); return false; }
 
-    var body = new URLSearchParams({
+    if(typeof navigator!=="undefined" && navigator.onLine===false){
+      _setSheetLast("queued","offline");
+      return false;
+    }
+
+    var qs = new URLSearchParams({
       secret: sec,
       moveId: move.id,
       dt: move.dt || "",
@@ -1074,25 +1079,22 @@ function pushMoveToSheet(move){
       deviceId: getDeviceId()
     }).toString();
 
-    // 1) Tentative sendBeacon (non bloquant)
-    if(navigator && navigator.sendBeacon){
-      var ok = navigator.sendBeacon(SHEET_PUSH_URL, new Blob([body], {type:"application/x-www-form-urlencoded"}));
-      if(ok){ _setSheetLast("sent","sendBeacon"); return true; }
-      // si sendBeacon renvoie false, on tente fetch
-    }
+    // Mode compatibilité maximal : GET beacon (fonctionne mieux que POST depuis certains contextes)
+    var url = SHEET_PUSH_URL + (SHEET_PUSH_URL.indexOf("?")>=0 ? "&" : "?") + qs;
 
-    // 2) Fallback fetch no-cors (déclenche l'envoi ; pas de réponse lisible)
-    fetch(SHEET_PUSH_URL, {
-      method:"POST",
-      mode:"no-cors",
-      headers:{ "Content-Type":"application/x-www-form-urlencoded" },
-      body: body
-    }).then(function(){
-      _setSheetLast("sent","fetch(no-cors)");
-    }).catch(function(err){
-      _setSheetLast("error","fetch failed");
-    });
+    // Envoyer via un chargement "image" (pas de CORS, pas de preflight)
+    if(!window.__sheetImgKeep) window.__sheetImgKeep = [];
+    var img = new Image();
+    img.referrerPolicy = "no-referrer";
+    window.__sheetImgKeep.push(img);
+    // limiter la taille du tableau pour éviter fuite mémoire
+    if(window.__sheetImgKeep.length > 20) window.__sheetImgKeep.splice(0, window.__sheetImgKeep.length-20);
 
+    img.onload = function(){ _setSheetLast("sent","GET image"); };
+    img.onerror = function(){ _setSheetLast("sent?","GET image (no ack)"); }; // la requête a souvent été envoyée malgré onerror
+    img.src = url;
+
+    _setSheetLast("sent","GET image");
     return true;
   }catch(e){
     console.warn("pushMoveToSheet failed", e);
