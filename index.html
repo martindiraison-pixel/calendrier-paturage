@@ -1,0 +1,3333 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Suivi pâturage — saisie rapide</title>
+<style>
+:root {
+  --bg:#0b1220; --panel:#101a30; --panel2:#0f1729; --txt:#e8edf7; --muted:#a9b6d3;
+  --border:rgba(232,237,247,.14); --shadow:0 14px 34px rgba(0,0,0,.38);
+  --accent:#22c55e; --accent2:#60a5fa; --danger:#fb7185; --warn:#fbbf24;
+  --radius:16px;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:linear-gradient(180deg,#060913 0%,#0b1220 60%);color:var(--txt)}
+header{position:sticky;top:0;z-index:10;background:rgba(6,9,19,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.wrap{max-width:1100px;margin:0 auto;padding:14px 14px 22px}
+h1{margin:0;font-size:16px;letter-spacing:.2px}
+nav.tabs{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.tab{padding:12px 14px;border:1px solid var(--border);border-radius:999px;background:rgba(255,255,255,.03);cursor:pointer;font-weight:700}
+.tab.active{background:rgba(96,165,250,.18);border-color:rgba(96,165,250,.5)}
+.view{display:none}
+.view.active{display:block}
+.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:rgba(17,26,46,.88);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
+.card h2{margin:0 0 10px;font-size:14px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pill{display:inline-flex;gap:8px;align-items:center;padding:8px 10px;border:1px solid var(--border);border-radius:999px;background:rgba(255,255,255,.03);font-weight:700}
+.small{font-size:12px}
+.muted{color:var(--muted)}
+.hr{height:1px;background:var(--border);margin:12px 0}
+.btn{padding:12px 14px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--txt);cursor:pointer;font-weight:800}
+.btn.big{padding:14px 16px;border-radius:18px;font-size:15px}
+.btn.primary{background:rgba(34,197,94,.18);border-color:rgba(34,197,94,.5)}
+.btn.info{background:rgba(96,165,250,.18);border-color:rgba(96,165,250,.5)}
+.btn.danger{background:rgba(251,113,133,.14);border-color:rgba(251,113,133,.5)}
+.btn.warn{background:rgba(251,191,36,.14);border-color:rgba(251,191,36,.55)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.selected{
+  outline:6px solid rgba(255,255,255,.75);
+  outline-offset:0;
+  box-shadow:0 0 0 2px rgba(0,0,0,.35) inset, 0 16px 32px rgba(0,0,0,.30);
+}
+#btnIN.selected{
+  background:rgba(34,197,94,.95);
+  border-color:rgba(34,197,94,1);
+  color:#ffffff;
+  text-shadow:0 1px 0 rgba(0,0,0,.35);
+}
+#btnOUT.selected{
+  background:rgba(245,158,11,.95);
+  border-color:rgba(245,158,11,1);
+  color:#111827;
+  text-shadow:0 1px 0 rgba(255,255,255,.35);
+}
+.stack{display:grid;grid-template-columns:1fr;gap:var(--gap);}
+.toast{
+  position:fixed;
+  left:50%;
+  bottom:18px;
+  transform:translateX(-50%) translateY(18px);
+  opacity:0;
+  padding:12px 14px;
+  border-radius:14px;
+  border:1px solid rgba(232,237,247,.18);
+  background:rgba(16,185,129,.92);
+  color:#062014;
+  font-weight:900;
+  box-shadow:0 18px 38px rgba(0,0,0,.35);
+  transition:opacity .18s ease, transform .18s ease;
+  pointer-events:none;
+  z-index:9999;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.errBanner{
+  position:fixed;
+  left:50%;
+  top:14px;
+  transform:translateX(-50%);
+  width:min(1020px, calc(100% - 24px));
+  padding:12px 14px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(239,68,68,.94);
+  color:#1f0a0a;
+  font-weight:900;
+  box-shadow:0 18px 38px rgba(0,0,0,.35);
+  z-index:10000;
+}
+.errBannerInner{display:flex;gap:10px;align-items:center;justify-content:space-between;}
+.errBannerInner .btn{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.35);}
+.btn.confirmed{
+  box-shadow:0 0 0 5px rgba(34,197,94,.30), 0 18px 38px rgba(0,0,0,.35);
+  transform:translateY(-1px);
+}
+.card.subtle{
+  background:rgba(255,255,255,.02);
+  border-color:rgba(232,237,247,.12);
+}
+input,select{padding:12px 12px;border-radius:14px;border:1px solid var(--border);background:rgba(15,23,41,.75);color:var(--txt);min-width:200px}
+input[type="number"]{min-width:120px}
+.notice{padding:10px 12px;border-radius:14px;border:1px dashed var(--border);background:rgba(255,255,255,.03)}
+.notice.ok{border-color:rgba(34,197,94,.55)}
+.notice.warn{border-color:rgba(251,191,36,.6)}
+.notice.bad{border-color:rgba(251,113,133,.6)}
+.list{display:grid;gap:10px}
+.kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px;padding:2px 6px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.04)}
+.subtabs{display:flex;gap:10px;flex-wrap:wrap}
+.subtab{padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.03);cursor:pointer;font-weight:800}
+.subtab.active{background:rgba(34,197,94,.16);border-color:rgba(34,197,94,.5)}
+.subview{display:none}
+.subview.active{display:block}
+.table{width:100%;border-collapse:collapse}
+.table th,.table td{border-bottom:1px solid var(--border);padding:8px 6px;vertical-align:top}
+.table th{text-align:left;color:var(--muted);font-size:12px}
+.right{text-align:right}
+.mapBox{border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;background:rgba(0,0,0,.25)}
+#mapCanvas{width:100%;height:520px;display:block;touch-action:none}
+@media (max-width:900px){#mapCanvas{height:440px}}
+.legendRow{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-top:10px}
+.legendBar{height:10px;border-radius:999px;border:1px solid var(--border);background:linear-gradient(90deg, hsla(0,85%,55%,.85) 0%, hsla(60,85%,55%,.85) 50%, hsla(120,85%,45%,.85) 100%);width:100%;margin-top:8px}
+.legendTicks{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px}
+.kpiMini{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.kpiMini .pill{padding:7px 9px}
+input[type="number"].mini{width:92px}
+
+/* Sauvegarde (bandeau) */
+.backupBar{
+  background: rgba(255,255,255,.92);
+  border-bottom: 1px solid rgba(148,163,184,.35);
+  backdrop-filter: blur(6px);
+}
+.backupBar .wrap{ padding-top:10px; padding-bottom:10px; }
+.btn.small{ padding:8px 10px; font-size:12px; }
+.pill.small{ font-size:12px; padding:6px 10px; }
+.notice.ok{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.08); }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Suivi pâturage — saisie rapide</h1>
+    <nav class="tabs" id="mainTabs">
+      <div class="tab active" data-view="saisie">Saisie</div>
+      <div class="tab" data-view="lots">Lots</div>
+            <div class="tab" data-view="admin">Admin</div>
+    </nav>
+  </div>
+</header>
+
+<div id="backupBar" class="backupBar">
+  <div class="wrap">
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+      <div class="pill small"><strong>Sauvegarde</strong> <span id="bkBarLast" class="muted">—</span></div>
+      <div class="pill small"><strong>Non sauvegardés</strong> <span id="bkBarUnsaved" class="muted">0</span></div>
+      <button class="btn small" id="btnBkBarExport" type="button">Sauvegarder (ZIP)</button>
+      <button class="btn small" id="btnBkBarShare" type="button">Partager</button>
+    </div>
+    <div id="bkBarHint" class="muted small" style="margin-top:6px">—</div>
+  </div>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<div id="errBanner" class="errBanner" hidden>
+  <div class="errBannerInner">
+    <div><b>Erreur JavaScript</b> — <span id="errBannerMsg">—</span></div>
+    <button class="btn" type="button" onclick="document.getElementById('errBanner').hidden=true">Fermer</button>
+  </div>
+</div>
+
+
+<script>
+(function(){
+  function showErr(msg){
+    try{
+      var b=document.getElementById("errBanner");
+      if(!b) return;
+      var m=document.getElementById("errBannerMsg");
+      if(m) m.textContent = msg || "Erreur";
+      b.hidden=false;
+    }catch(_){}
+  }
+  window.addEventListener("error", function(ev){
+    try{ console.error(ev.error || ev.message || ev); }catch(_){}
+    var loc="";
+    try{
+      if(ev && ev.filename) loc = " (" + String(ev.filename).split("/").pop() + ":" + (ev.lineno||0) + ")";
+    }catch(_){}
+    showErr((ev && ev.message ? ev.message : "Erreur JavaScript") + loc);
+  });
+  window.addEventListener("unhandledrejection", function(ev){
+    try{ console.error(ev.reason || ev); }catch(_){}
+    var r=ev && ev.reason;
+    var msg = (r && r.message) ? r.message : String(r||"Promise rejetée");
+    showErr("Promise rejetée: " + msg);
+  });
+})();
+</script>
+
+<main class="wrap">
+  <section class="view active" id="view-saisie">
+  <div class="stack">
+
+    <div class="card">
+      <h2>Consignes de saisies</h2>
+      <div class="notice" style="margin-top:0">Commencez par la carte, cliquez sur une parcelle puis cliquez sur un paddock. Choisissez ensuite le lot concerné. Renseignez la date du mouvement. Renseignez le type de mouvement (Entrée ou Sortie). Enfin, vérifiez les informations et validez.</div>
+    </div>
+
+    <div class="card">
+      <h2>Carte</h2>
+      <div class="row" style="justify-content:space-between;margin-top:0">
+        <div class="row">
+          <button class="btn" id="btnMapReset" type="button">Réinitialiser</button>
+          <button class="btn" id="btnClearParcel" type="button">Parcelle : aucune</button>
+          <button class="btn" id="btnZoomIn" type="button">+</button>
+          <button class="btn" id="btnZoomOut" type="button">−</button>
+        </div>
+      </div>
+
+      <div class="legendRow">
+        <div>
+          <div class="muted small">Date de référence</div>
+          <input type="date" id="refDate">
+        </div>
+        <div>
+          <div class="muted small">Objectif repos (jours)</div>
+          <input type="number" id="restTarget" class="mini" min="1" max="365" value="60">
+        </div>
+        <div>
+          <div class="muted small">Couche</div>
+          <select id="mapLayer">
+            <option value="rest">Repos</option>
+            <option value="pressure">Pression (UGB/ha/an)</option>
+          </select>
+        </div>
+        <div id="pressureMaxBox">
+          <div class="muted small">Max pression</div>
+          <input type="number" id="pressureMax" class="mini" min="0.1" step="0.1" value="2">
+        </div>
+        <div class="pill small" id="mapLegendPill" title="Légende de la couche affichée">
+          <strong id="mapLegendTitle">Repos</strong> <span id="mapLegendLabel" class="muted">0 → 60 j</span>
+        </div>
+      </div>
+      <div class="legendBar" id="mapLegendBar" aria-hidden="true"></div>
+      <div class="legendTicks" id="mapLegendTicks"><span>0</span><span>…</span><span>…</span></div>
+
+      <div class="kpiMini">
+        <div class="pill small"><strong>Parcelle</strong> <span id="selParcel" class="muted">—</span></div>
+        <div class="pill small"><strong>Paddock</strong> <span id="selPaddock" class="muted">—</span></div>
+        <div class="pill small"><strong>Surface</strong> <span id="selArea" class="muted">—</span> ha</div>
+        <div class="pill small"><strong>Repos</strong> <span id="selRest" class="muted">—</span> j</div>
+        <div class="pill small"><strong>Dernière sortie</strong> <span id="selLastOut" class="muted">—</span></div>
+        <div class="pill small"><strong>Occupé par</strong> <span id="selActiveLots" class="muted">—</span></div>
+        <div class="pill small"><strong>Pression</strong> <span id="selPressure" class="muted">—</span> UGB/ha/an</div>
+      </div>
+      <div id="decisionAlert" class="notice" style="display:none;margin-top:10px"></div>
+
+      <div class="mapBox" style="margin-top:10px"><canvas id="mapCanvas"></canvas></div>
+      <div class="muted small" style="margin-top:8px">Clic parcelle = zoom • Clic paddock = sélection.</div>
+    </div>
+
+    <div class="card">
+      <h2>Choix du lot</h2>
+      <div id="lotButtons" class="row" style="margin-top:8px"></div>
+      <div class="muted small" style="margin-top:8px">Créez/éditez vos lots dans l’onglet <b>Lots</b>.</div>
+    </div>
+
+    <div class="card">
+      <h2>Date et type de mouvement</h2>
+      <div class="row" style="align-items:flex-end">
+        <div>
+          <div class="muted small">Date</div>
+          <input type="date" id="mvDate">
+        </div>
+        <div>
+          <div class="muted small">Type</div>
+          <div class="row">
+            <button class="btn big info" id="btnIN" type="button">Entrée</button>
+            <button class="btn big warn" id="btnOUT" type="button">Sortie</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Résumé / validation</h2>
+      <div id="mvReady" class="notice warn">Choisissez un paddock sur la carte.</div>
+      <div class="row" style="justify-content:flex-end;margin-top:10px">
+        <button class="btn" id="btnClearDraft" type="button">Effacer</button>
+        <button class="btn primary big" id="btnValidate" type="button">Valider</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <h3 style="margin:0 0 6px 0">Corrections rapides</h3>
+      <div class="row" style="justify-content:flex-end">
+        <button class="btn danger" id="btnUndoLast" type="button">Annuler le dernier mouvement</button>
+      </div>
+      <div class="muted small" style="margin-top:8px">Suppression immédiate possible sur les derniers mouvements.</div>
+      <div id="recentMoves" class="list" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card subtle">
+      <h2>Paddocks (secours)</h2>
+      <details>
+        <summary style="cursor:pointer;font-weight:800;padding:10px 12px;border:1px solid var(--border);border-radius:14px;background:rgba(255,255,255,.02)">Afficher la liste paddocks (secours)</summary>
+        <div class="muted small" style="margin-top:10px">1) Cliquez une parcelle → 2) Cliquez un paddock.</div>
+        <div id="parcelButtons" class="row" style="margin-top:8px"></div>
+        <div id="paddockButtons" class="row" style="margin-top:10px"></div>
+      </details>
+    </div>
+
+  </div>
+</section>
+
+  <section class="view" id="view-lots">
+    <div class="grid">
+      <div class="card">
+        <h2>Lots</h2>
+        <div class="row">
+          <input id="newLotName" placeholder="Nom du nouveau lot…" style="flex:1 1 280px">
+          <button class="btn primary" id="btnCreateLot" type="button">Créer</button>
+        </div>
+        <div class="hr"></div>
+        <div id="lotsList" class="list"></div>
+      </div>
+
+      <div class="card">
+        <h2>Composition du lot</h2>
+        <div id="lotEditEmpty" class="muted">Sélectionnez un lot à gauche.</div>
+        <div id="lotEdit" style="display:none">
+          <div class="row" style="justify-content:space-between">
+            <div class="pill"><strong>Lot</strong> <span id="editLotName" class="muted">—</span></div>
+            <div class="row">
+              <button class="btn" id="btnRenameLot">Renommer</button>
+              <button class="btn danger" id="btnDeleteLot">Supprimer</button>
+            </div>
+          </div>
+          <div class="hr"></div>
+
+          <div class="row">
+            <div>
+              <div class="muted small">Date d’effet</div>
+              <input type="date" id="compDate">
+            </div>
+            <div>
+              <div class="muted small">UGB (calcul)</div>
+              <input id="compUGB" disabled>
+            </div>
+            <div style="flex:1"></div>
+            <button class="btn" id="btnDupLast">Dupliquer dernière</button>
+            <button class="btn primary" id="btnSaveComp">Enregistrer</button>
+          </div>
+
+          <div class="hr"></div>
+          <div id="compInputs"></div>
+
+          <div class="hr"></div>
+          <h2 style="margin:0 0 10px;font-size:14px">Historique</h2>
+          <div id="compHistory"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="view-admin">
+    <div class="card">
+      <h2>Admin</h2>
+      <div class="subtabs" id="adminTabs">
+        <div class="subtab active" data-sub="refs">Référentiels</div>
+        <div class="subtab" data-sub="export">Export / Sauvegarde</div>
+        <div class="subtab" data-sub="journal">Journal</div>
+        <div class="subtab" data-sub="dash">Tableau de bord</div>
+      </div>
+      <div class="hr"></div>
+
+      <div class="subview active" id="sub-refs">
+        <div class="grid">
+          <div class="card">
+            <h2>Catégories & UGB</h2>
+            <div id="catsTable"></div>
+            <div class="row" style="justify-content:flex-end;margin-top:10px">
+              <button class="btn primary" id="btnSaveCats">Enregistrer catégories</button>
+            </div>
+          </div>
+          <div class="card">
+            <h2>Paddocks (surfaces)</h2>
+            <div class="notice">Les surfaces viennent de votre GeoJSON (<span class="kbd">Surface</span>).</div>
+            <div class="hr"></div>
+            <div class="pill"><strong>Total paddocks</strong> <span id="kpiPads" class="muted">—</span></div>
+            <div class="hr"></div>
+            <h2>Carte — mise à jour (GeoJSON)</h2>
+            <div class="notice">Importez une nouvelle version du découpage <b>parcelles</b> et/ou <b>paddocks</b> (utile si le découpage change en cours d’année).</div>
+            <div class="row" style="margin-top:10px">
+              <label class="btn" for="fileParcels">Choisir parcelles.geojson</label>
+              <input id="fileParcels" type="file" accept=".geojson,application/geo+json,application/json" style="display:none">
+              <span id="fileParcelsName" class="muted small">—</span>
+            </div>
+            <div class="row" style="margin-top:10px">
+              <label class="btn" for="filePaddocks">Choisir paddocks.geojson</label>
+              <input id="filePaddocks" type="file" accept=".geojson,application/geo+json,application/json" style="display:none">
+              <span id="filePaddocksName" class="muted small">—</span>
+            </div>
+            <div class="row" style="justify-content:flex-end;margin-top:10px">
+              <button class="btn info" id="btnImportMap">Importer la carte</button>
+              <button class="btn" id="btnResetMap">Revenir à la carte intégrée</button>
+            </div>
+            <div id="mapImportMsg" class="muted small" style="margin-top:8px">—</div>
+            <div class="hr"></div>
+            <h2>Fond de carte (image + world file)</h2>
+            <div class="notice">Importez une image (PNG/JPG) + son fichier world (<span class="kbd">.pgw</span>/<span class="kbd">.jgw</span>/<span class="kbd">.wld</span>). Le fond importé est stocké dans le navigateur (IndexedDB) et remplace <span class="kbd">Fond.png</span>.</div>
+
+            <div class="row" style="margin-top:10px">
+              <label class="btn" for="fileRaster">Choisir une image</label>
+              <input id="fileRaster" type="file" accept="image/png,image/jpeg" style="display:none">
+              <span id="fileRasterName" class="muted small">—</span>
+            </div>
+            <div class="row" style="margin-top:10px">
+              <label class="btn" for="fileWorld">Choisir world file</label>
+              <input id="fileWorld" type="file" accept=".pgw,.jgw,.wld,.tfw,.gfw,.bpw,.wld,application/octet-stream,text/plain" style="display:none">
+              <span id="fileWorldName" class="muted small">—</span>
+            </div>
+            <div class="row" style="justify-content:flex-end;margin-top:10px">
+              <button class="btn info" id="btnImportRaster" type="button">Importer le fond</button>
+              <button class="btn" id="btnResetRaster" type="button">Revenir au fond intégré</button>
+            </div>
+            <div id="rasterImportMsg" class="muted small" style="margin-top:8px">—</div>
+
+
+          </div>
+        </div>
+      </div>
+
+      <div class="subview" id="sub-export">
+        <div class="grid">
+          <div class="card">
+            <h2>Exports CSV</h2>
+            
+<div class="row">
+              <select id="yearSel"></select>
+              <button class="btn info" id="btnExportMoves" type="button">Événements</button>
+              <button class="btn info" id="btnExportComps" type="button">Compositions</button>
+              <button class="btn info" id="btnExportDaily" type="button">Calendrier journalier</button>
+            </div>
+            <div class="row" style="margin-top:10px;flex-wrap:wrap">
+              <button class="btn primary" id="btnExportAll" type="button">Tout télécharger (ZIP)</button>
+              <button class="btn" id="btnPrepareEmail" type="button">Préparer email</button>
+              <button class="btn" id="btnShareAll" type="button">Partager le ZIP</button>
+            </div>
+            <div id="exportMsg" class="muted small" style="margin-top:10px">—</div>
+            <div class="hr"></div>
+            <h2>Synchronisation (Google Sheet)</h2>
+            <div class="notice small">Optionnel : si vous utilisez un <b>Google Apps Script</b> (Web App) pour enregistrer les mouvements dans un tableur en ligne, collez ici le <b>secret</b> défini dans Apps Script. Sans secret, la synchro est désactivée.</div>
+            <div class="row" style="margin-top:10px;flex-wrap:wrap">
+              <input id="sheetSecret" placeholder="Secret Apps Script…" style="flex:1 1 260px">
+              <button class="btn info" id="btnSaveSheetSecret" type="button">Enregistrer</button>
+              <button class="btn" id="btnFlushSheet" type="button">Renvoyer en attente</button>
+              <button class="btn" id="btnTestSheet" type="button">Tester</button>
+            </div>
+            <div id="sheetSyncMsg" class="muted small" style="margin-top:8px">—</div>
+
+            <div class="muted small" style="margin-top:10px">
+              Calendrier journalier = <b>1 ligne / jour</b> uniquement quand un lot pâture (Option 1).
+            </div>
+          </div>
+          <div class="card">
+            <h2>Sauvegarde</h2>
+            <div class="row">
+              <button class="btn" id="btnBackup">Sauvegarder (JSON)</button>
+              <label class="btn" for="restoreFile">Restaurer</label>
+              <input id="restoreFile" type="file" accept="application/json" style="display:none">
+              <button class="btn danger" id="btnResetAll">Réinitialiser tout</button>
+            </div>
+            <div class="muted small" style="margin-top:10px">La sauvegarde JSON permet de transférer les données sur un autre appareil.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subview" id="sub-journal">
+        <h2>Journal complet</h2>
+        <div class="row">
+          <input type="date" id="fltFrom">
+          <input type="date" id="fltTo">
+          <select id="fltLot"></select>
+          <button class="btn" id="btnApplyFilters">Filtrer</button>
+        </div>
+        <div class="hr"></div>
+        <div id="journalTable"></div>
+      </div>
+
+      <div class="subview" id="sub-dash">
+        <div class="grid">
+          <div class="card">
+            <h2>Indicateurs</h2>
+            <div class="row" style="flex-wrap:wrap">
+              <div class="pill"><strong>Lots</strong> <span id="kpiLots" class="muted">—</span></div>
+              <div class="pill"><strong>Mouvements</strong> <span id="kpiMoves" class="muted">—</span></div>
+              <div class="pill"><strong>Lots “ouverts”</strong> <span id="kpiOpen" class="muted">—</span></div>
+            </div>
+            <div class="hr"></div>
+            <button class="btn" id="btnLoadDemo">Charger une démo</button>
+          </div>
+
+          <div class="card">
+            <h2>Sauvegarde</h2>
+            <div class="row" style="flex-wrap:wrap">
+              <div class="pill"><strong>Dernière</strong> <span id="bkLast" class="muted">—</span></div>
+              <div class="pill"><strong>Non sauvegardés</strong> <span id="bkUnsaved" class="muted">0</span></div>
+              <div class="pill"><strong>Stockage persistant</strong> <span id="bkPersist" class="muted">—</span></div>
+            </div>
+            <div class="hr"></div>
+            <div class="row" style="justify-content:flex-end;flex-wrap:wrap">
+              <button class="btn primary" id="btnQuickBackup" type="button">Sauvegarder (ZIP)</button>
+              <button class="btn" id="btnQuickShare" type="button">Partager</button>
+            </div>
+            <div id="bkHint" class="muted small" style="margin-top:8px">—</div>
+          </div>
+
+          <div class="card">
+            <h2>Pilotage (date de référence)</h2>
+            <div class="notice small" id="pilotMeta">—</div>
+            <div class="hr"></div>
+            <h3>Lots en pâture</h3>
+            <div id="dashOpenLots">—</div>
+            <div class="hr"></div>
+            <h3>Paddocks prêts (repos ≥ objectif)</h3>
+            <div id="dashReadyPads">—</div>
+          </div>
+
+          <div class="card">
+            <h2>État données</h2>
+            <div class="notice" id="stateBox">—</div>
+          </div>
+        </div>
+      </div>
+
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<script>
+var GEO = {"raster":{"img":"Fond.png","width":622,"height":591,"left":246768.50827588834,"right":247609.94482411168,"top":6754244.5,"bottom":6753445.0},"parcels":[{"name":"NORD","bbox":[247441.64745489584,6754073.718203088,247609.74977624207,6754244.375270953],"geom":[[[247451.86644099618,6754215.251160571],[247575.0052235017,6754244.375270953],[247609.74977624207,6754217.2949577905],[247609.23882693698,6754145.251105784],[247582.15851377178,6754083.937189185],[247536.68402562675,6754073.718203088],[247441.64745489584,6754182.550405049],[247451.86644099618,6754215.251160571]]]},{"name":"COTEAU NORD","bbox":[246952.1580207029,6753879.557467183,247428.3627729661,6754185.61610088],"geom":[[[246973.61789151287,6753973.572139303],[246988.43542135827,6753960.287457373],[247160.62533714424,6753949.046572662],[247276.61082937988,6753879.557467183],[247378.8006903805,6753998.608655247],[247428.3627729661,6754057.878774629],[247313.3991793404,6754155.981041191],[247126.9026830141,6754185.61610088],[246964.42080402293,6754170.798571035],[246952.1580207029,6754143.207308563],[246973.61789151287,6753973.572139303]]]},{"name":"KERVITO","bbox":[246861.7199937171,6753733.681440606,247049.74933795846,6753966.674323688],"geom":[[[246910.7711269976,6753966.674323688],[246994.0558637132,6753954.411540366],[247049.74933795846,6753951.345844535],[247033.39896019833,6753889.010029325],[247024.2018727085,6753789.885864155],[247024.20187270828,6753734.192389908],[246994.56681301817,6753733.681440606],[246938.8733387731,6753760.250804467],[246915.36967074277,6753769.9588412605],[246876.02657425747,6753763.316500296],[246861.7199937171,6753784.265421799],[246891.35505340766,6753949.302047316],[246910.7711269976,6753966.674323688]]]},{"name":"QG","bbox":[247024.20187270828,6753728.571947555,247156.53774270386,6753951.345844535],"geom":[[[247024.20187270828,6753734.192389908],[247062.01212127873,6753728.571947555],[247080.40629625862,6753734.703339214],[247101.35521776404,6753821.564721067],[247133.03407467395,6753884.922434883],[247156.53774270386,6753933.462618856],[247150.4063510442,6753942.148757046],[247049.74933795846,6753951.345844535],[247033.39896019833,6753889.010029325],[247024.2018727085,6753789.885864155],[247024.20187270828,6753734.192389908]]]},{"name":"SAULAIE","bbox":[247080.40629625862,6753676.455118445,247335.88094876014,6753939.59401052],"geom":[[[247161.64723575418,6753939.59401052],[247237.7786821997,6753886.4552828],[247335.36999945535,6753817.988075931],[247335.88094876014,6753792.440610679],[247204.56697737443,6753719.8858093675],[247132.52312536904,6753676.455118445],[247088.0705358336,6753714.776316318],[247080.40629625862,6753734.703339214],[247101.35521776404,6753821.564721067],[247133.03407467395,6753884.922434883],[247156.53774270386,6753933.462618856],[247161.64723575418,6753939.59401052]]]},{"name":"PYLONE","bbox":[246768.72722020675,6753589.721473919,246994.56681301817,6753769.9588412605],"geom":[[[246876.02657425747,6753763.316500296],[246831.06303541735,6753732.787279322],[246770.77101742668,6753710.816459205],[246768.72722020675,6753681.181399515],[246825.442593062,6753597.385713493],[246856.6105006672,6753589.721473919],[246871.42803051218,6753607.093750288],[246884.20176313742,6753625.998874575],[246923.54485962284,6753628.042671797],[246964.93175332795,6753640.305455114],[246978.72738456324,6753728.188735578],[246994.56681301817,6753733.681440606],[246938.8733387731,6753760.250804467],[246915.36967074277,6753769.9588412605],[246876.02657425747,6753763.316500296]]]},{"name":"CLOS DU JONC","bbox":[246856.6105006672,6753536.071796894,247132.52312536904,6753734.703339214],"geom":[[[247113.6180010839,6753659.721528705],[247037.48655463837,6753549.86742813],[246967.48649985314,6753573.371096161],[246920.99011309777,6753536.071796894],[246860.18714580237,6753557.531667706],[246856.6105006672,6753589.721473919],[246871.42803051218,6753607.093750288],[246884.20176313742,6753625.998874575],[246923.54485962284,6753628.042671797],[246964.93175332795,6753640.305455114],[246978.72738456324,6753728.188735578],[246994.56681301817,6753733.681440606],[247024.20187270828,6753734.192389908],[247062.01212127873,6753728.571947555],[247080.40629625862,6753734.703339214],[247088.0705358336,6753714.776316318],[247132.52312536904,6753676.455118445],[247113.6180010839,6753659.721528705]]]},{"name":"LANDE","bbox":[247037.48655463837,6753445.761507237,247410.9904965958,6753676.455118445],"geom":[[[247182.5961572593,6753670.06825213],[247266.39184328006,6753652.695975763],[247400.77151049575,6753525.980548122],[247410.9904965958,6753498.900234955],[247384.42113273573,6753462.111884996],[247338.9466445903,6753445.761507237],[247230.62539192976,6753458.53523986],[247037.48655463837,6753549.86742813],[247113.6180010839,6753659.721528705],[247132.52312536904,6753676.455118445],[247182.5961572593,6753670.06825213]]]}],"paddocks":[{"id":"COTEAU NORD_1","group":"COTEAU NORD","area_ha":0.10376023225938552,"bbox":[247127.51811666426,6754134.96380337,247169.17110870732,6754165.346044443],"geom":[[[247158.91002224572,6754134.96380337],[247127.51811666426,6754138.053165506],[247127.5693507453,6754139.375004792],[247128.77171369194,6754160.296120067],[247132.37880253262,6754165.346044443],[247166.7663828134,6754165.105571853],[247169.17110870732,6754163.181791138],[247158.91002224572,6754134.96380337]]]},{"id":"COTEAU NORD_2","group":"COTEAU NORD","area_ha":0.13269829821921886,"bbox":[247155.2236985236,6754084.547254413,247198.63910115988,6754134.533971016],"geom":[[[247165.04084184673,6754134.533971016],[247198.63910115988,6754123.076113718],[247183.83993665938,6754084.547254413],[247172.29725236923,6754090.559069146],[247158.83078736393,6754098.735137184],[247155.2236985236,6754107.151677815],[247157.8688970066,6754115.327745852],[247165.04084184673,6754134.533971016]]]},{"id":"COTEAU NORD_3","group":"COTEAU NORD","area_ha":0.13525819842536002,"bbox":[247198.63910116017,6754110.037348887,247245.64139212936,6754157.169976403],"geom":[[[247245.64139212936,6754152.360524617],[247230.49161899858,6754115.327745853],[247228.32736569422,6754110.037348887],[247198.63910116017,6754123.076113718],[247211.734757027,6754157.169976403],[247245.64139212936,6754152.360524617]]]},{"id":"COTEAU NORD_4","group":"COTEAU NORD","area_ha":0.13406243171840906,"bbox":[247183.83993665938,6754069.157008691,247228.32736569422,6754123.076113718],"geom":[[[247209.57050372259,6754069.157008691],[247183.83993665938,6754084.547254413],[247198.63910116017,6754123.076113718],[247228.32736569422,6754110.037348887],[247209.57050372259,6754069.157008691]]]},{"id":"COTEAU NORD_5","group":"COTEAU NORD","area_ha":0.15735559770297258,"bbox":[247228.32736569422,6754098.735137186,247277.6242465166,6754152.360524617],"geom":[[[247257.18407641962,6754151.63910685],[247277.6242465166,6754144.905874347],[247258.145966777,6754098.735137186],[247228.32736569422,6754110.037348887],[247230.49161899858,6754115.327745853],[247245.64139212936,6754152.360524617],[247257.18407641962,6754151.63910685]]]},{"id":"COTEAU NORDCOTEAU NORD_6","group":"COTEAU NORD","area_ha":0.1573440652564168,"bbox":[247209.57050372259,6754052.083454848,247258.145966777,6754110.037348887],"geom":[[[247239.38910480577,6754052.083454848],[247209.57050372259,6754069.157008691],[247228.32736569422,6754110.037348887],[247258.145966777,6754098.735137186],[247239.38910480577,6754052.083454848]]]},{"id":"COTEAU NORD_7","group":"COTEAU NORD","area_ha":0.16823128561228515,"bbox":[247258.145966777,6754080.4592203945,247305.0381217057,6754144.905874347],"geom":[[[247294.2168551836,6754136.248861128],[247305.0381217057,6754127.110902732],[247287.48362268112,6754080.4592203945],[247258.145966777,6754098.735137186],[247277.6242465166,6754144.905874347],[247294.2168551836,6754136.248861128]]]},{"id":"COTEAU NORD_8","group":"COTEAU NORD","area_ha":0.1717523279234767,"bbox":[247239.38910480577,6754037.655099483,247287.48362268112,6754098.735137186],"geom":[[[247271.85290437128,6754038.61698984],[247265.84108963696,6754037.655099483],[247253.09604240005,6754043.185969041],[247239.38910480577,6754052.083454848],[247258.145966777,6754098.735137186],[247287.48362268112,6754080.4592203945],[247271.85290437128,6754038.61698984]]]},{"id":"COTEAU NORD_9","group":"COTEAU NORD","area_ha":0.08992586112208664,"bbox":[247280.98161496583,6754055.450071097,247324.6723357594,6754093.410016547],"geom":[[[247292.3568604089,6754093.410016547],[247324.6723357594,6754077.305255062],[247308.8856831356,6754062.183303601],[247300.22866991797,6754055.450071097],[247280.98161496583,6754063.0538458945],[247287.48362268112,6754080.4592203945],[247292.3568604089,6754093.410016547]]]},{"id":"COTEAU NORD_10","group":"COTEAU NORD","area_ha":0.07238904730682261,"bbox":[247270.16959624592,6754027.6153688785,247308.8856831356,6754063.0538458945],"geom":[[[247300.22866991797,6754055.450071097],[247308.8856831356,6754062.183303601],[247307.92379277787,6754052.8649907615],[247302.15245063324,6754045.891285673],[247280.99086276762,6754027.6153688785],[247270.16959624592,6754034.108128793],[247271.85290437128,6754038.61698984],[247280.98161496583,6754063.0538458945],[247300.22866991797,6754055.450071097]]]},{"id":"COTEAU NORD_11","group":"COTEAU NORD","area_ha":0.1312407137930393,"bbox":[247321.39025778323,6754030.9819851285,247383.9131310213,6754084.847845151],"geom":[[[247321.39025778323,6754048.296011563],[247366.11815940746,6754084.847845151],[247383.9131310213,6754073.54563345],[247336.540030914,6754030.9819851285],[247321.39025778323,6754048.296011563]]]},{"id":"COTEAU NORD_12","group":"COTEAU NORD","area_ha":0.17867270330786705,"bbox":[247336.540030914,6754010.541815031,247405.7961366545,6754073.54563345],"geom":[[[247405.7961366545,6754057.433969959],[247353.8540573491,6754010.541815031],[247336.540030914,6754030.9819851285],[247383.9131310213,6754073.54563345],[247405.7961366545,6754057.433969959]]]},{"id":"COTEAU NORD_13","group":"COTEAU NORD","area_ha":0.06570869090817869,"bbox":[247282.67417089356,6754009.159097642,247326.6806547494,6754044.749040872],"geom":[[[247316.821278585,6754044.749040872],[247282.67417089356,6754018.537528629],[247289.64787598542,6754009.640042822],[247294.69780036254,6754012.285241307],[247297.102526256,6754009.159097642],[247326.6806547494,6754034.168246936],[247322.35214814072,6754040.180061673],[247316.821278585,6754044.749040872]]]},{"id":"COTEAU NORD_14","group":"COTEAU NORD","area_ha":0.12931702328026295,"bbox":[247227.91798864823,6753980.542859507,247273.77668508654,6754032.677753097],"geom":[[[247227.91798864823,6753985.755830833],[247248.2738225725,6754032.677753097],[247272.8147947291,6754018.29705604],[247273.77668508654,6754013.728076841],[247264.6387266902,6753995.692632637],[247256.94360383018,6753986.554674244],[247247.08422766573,6753988.478454957],[247240.83194034168,6753980.542859507],[247227.91798864823,6753985.755830833]]]},{"id":"COTEAU NORD_15","group":"COTEAU NORD","area_ha":0.09816151006091386,"bbox":[247186.17703673884,6754022.2997734165,247227.84642051533,6754064.708265791],"geom":[[[247219.3819426227,6754022.2997734165],[247186.17703673884,6754037.403393799],[247186.7256077319,6754040.420534262],[247194.42073059204,6754064.708265791],[247227.84642051533,6754044.749040871],[247219.3819426227,6754022.2997734165]]]},{"id":"COTEAU NORD_16","group":"COTEAU NORD","area_ha":0.0817732494238764,"bbox":[247144.91364601528,6754010.488226591,247178.8510784328,6754047.725279683],"geom":[[[247156.24156306835,6754047.725279683],[247178.8510784328,6754039.271990398],[247171.48300987552,6754012.468155149],[247165.09614356287,6754010.488226591],[247147.52857566334,6754014.44949461],[247144.91364601528,6754014.831295685],[247156.24156306835,6754047.725279683]]]},{"id":"COTEAU NORD_17","group":"COTEAU NORD","area_ha":0.08391791349165141,"bbox":[247123.2408441364,6754014.831295685,247156.24156306835,6754056.161685911],"geom":[[[247156.24156306835,6754047.725279683],[247144.91364601528,6754014.831295685],[247142.23817869712,6754015.1709123785],[247126.83151129395,6754019.656397825],[247123.2408441364,6754020.701781934],[247133.67720383464,6754056.161685911],[247156.24156306835,6754047.725279683]]]},{"id":"COTEAU NORD_18","group":"COTEAU NORD","area_ha":0.084496896276623,"bbox":[247101.35783850274,6754020.701781934,247133.67720383464,6754063.718028591],"geom":[[[247113.46669876517,6754063.718028591],[247133.67720383464,6754056.161685911],[247123.2408441364,6754020.701781934],[247101.35783850274,6754025.75170631],[247113.46669876517,6754063.718028591]]]},{"id":"COTEAU NORD_19","group":"COTEAU NORD","area_ha":0.10177136979065836,"bbox":[247090.53657198115,6753980.542859508,247126.00852173025,6754024.539332478],"geom":[[[247090.53657198115,6753987.757037189],[247100.90813712182,6754024.539332478],[247122.62348258437,6754019.621445418],[247126.00852173025,6754018.59954681],[247116.02666645497,6753980.542859508],[247090.53657198115,6753987.757037189]]]},{"id":"COTEAU NORD_20","group":"COTEAU NORD","area_ha":0.11387949973819778,"bbox":[247077.32127925265,6754056.953024783,247114.34335832944,6754096.87147462],"geom":[[[247077.32127925265,6754059.173705978],[247080.82610922668,6754094.965454501],[247099.67453037738,6754096.87147462],[247108.8124887736,6754095.428639081],[247114.34335832944,6754091.581077654],[247102.80067403923,6754056.953024783],[247077.32127925265,6754059.173705978]]]},{"id":"COTEAU NORD_21","group":"COTEAU NORD","area_ha":0.07912667461151723,"bbox":[246973.426420954,6754032.79595286,247003.15744090447,6754091.676512422],"geom":[[[246983.437947958,6754033.087379563],[246980.499989441,6754047.202354176],[246977.27398238407,6754057.914915139],[246973.426420954,6754080.51933854],[246986.1714681912,6754087.733516223],[246996.64080292714,6754091.676512422],[247003.15744090447,6754059.192059476],[246980.98577689618,6754058.098062896],[246982.8374606308,6754048.439280172],[246985.5276507889,6754034.406666643],[246985.58134124824,6754032.79595286],[246983.437947958,6754033.087379563]]]},{"id":"COTEAU NORD_22","group":"COTEAU NORD","area_ha":0.1866353125381982,"bbox":[246980.98577689618,6754029.539149593,247050.37764955504,6754061.522003981],"geom":[[[246985.58134124824,6754032.79595286],[246985.5276507889,6754034.406666643],[246980.98577689618,6754058.098062896],[247050.37764955504,6754061.522003981],[247046.53008812474,6754029.539149593],[246985.58134124824,6754032.79595286]]]},{"id":"COTEAU NORD_23","group":"COTEAU NORD","area_ha":0.16065083603709937,"bbox":[247046.53008812474,6754026.413005931,247102.80067403923,6754061.522003981],"geom":[[[247046.53008812474,6754029.539149593],[247095.34602376848,6754026.413005931],[247102.80067403923,6754056.953024783],[247050.37764955504,6754061.522003981],[247046.53008812474,6754029.539149593]]]},{"id":"COTEAU NORD_24","group":"COTEAU NORD","area_ha":0.12401255683973432,"bbox":[246983.28579711867,6753964.949869785,247016.82660204504,6754009.426077942],"geom":[[[246985.04585437878,6754009.426077942],[247016.82660204504,6754005.054324375],[247015.13252254447,6753964.949869785],[247003.25295120315,6753966.0995057225],[246992.01206649293,6753967.760090961],[246983.28579711867,6753986.073729063],[246984.0072148869,6754000.261611837],[246985.04585437878,6754009.426077942]]]},{"id":"COTEAU NORD_25","group":"COTEAU NORD","area_ha":0.11514886114504189,"bbox":[247015.13252254447,6753963.800233848,247045.85934667604,6754005.054324375],"geom":[[[247016.82660204504,6754005.054324375],[247045.85934667604,6754001.060585581],[247045.40626886586,6753963.800233848],[247015.13252254447,6753964.949869785],[247016.82660204504,6754005.054324375]]]},{"id":"COTEAU NORD_26","group":"COTEAU NORD","area_ha":0.12545059868581593,"bbox":[247045.40626886586,6753963.800233848,247086.79313350678,6754001.060585581],"geom":[[[247045.85934667604,6754001.060585581],[247086.79313350678,6753995.429741699],[247083.08192171,6753981.985695043],[247075.552277861,6753964.0557085],[247045.40626886586,6753963.800233848],[247045.85934667604,6754001.060585581]]]},{"id":"COTEAU NORD_28","group":"COTEAU NORD","area_ha":0.051702212168322874,"bbox":[247267.04345258407,6753961.064579769,247298.665598087,6753992.205780094],"geom":[[[247278.10519169545,6753992.205780094],[247268.7267607096,6753981.264277277],[247267.04345258407,6753974.41080848],[247275.9409383909,6753964.912141197],[247282.91464348283,6753961.064579769],[247290.97047522722,6753967.437103387],[247297.94418031885,6753968.278757449],[247298.665598087,6753970.803719637],[247283.51582495635,6753986.193965358],[247278.10519169545,6753992.205780094]]]},{"id":"COTEAU NORD_29","group":"COTEAU NORD","area_ha":0.07557604741938412,"bbox":[247264.87919927947,6753896.197098784,247293.25496482628,6753943.3297263],"geom":[[[247293.25496482628,6753940.444055232],[247290.12882116408,6753943.3297263],[247272.57432213967,6753939.722637461],[247264.87919927947,6753899.44347874],[247266.0815622264,6753896.197098784],[247277.62424651656,6753899.44347874],[247281.83251683065,6753906.898129011],[247293.25496482628,6753940.444055232]]]},{"id":"SAULAIE_30","group":"SAULAIE","area_ha":0.017911743883416056,"bbox":[247157.90001632663,6753915.930557118,247177.4689515048,6753935.176053273],"geom":[[[247174.0075717799,6753915.930557118],[247157.90001632663,6753925.915357572],[247162.48110515764,6753935.176053273],[247177.4689515048,6753924.275801385],[247174.0075717799,6753915.930557118]]]},{"id":"SAULAIE_31","group":"SAULAIE","area_ha":0.0873999103680253,"bbox":[247123.42186922295,6753849.563658232,247160.8914850909,6753892.483400041],"geom":[[[247160.8914850909,6753884.308211128],[247146.35781590577,6753849.563658232],[247123.42186922295,6753856.830492823],[247141.36186712305,6753892.483400041],[247160.8914850909,6753884.308211128]]]},{"id":"SAULAIE_32","group":"SAULAIE","area_ha":0.09927549625076354,"bbox":[247107.29857997072,6753815.273282496,247146.35781590577,6753856.830492823],"geom":[[[247146.35781590577,6753849.563658232],[247132.05123530154,6753815.273282496],[247110.47782010474,6753816.862902563],[247107.29857997072,6753823.221382832],[247123.42186922295,6753856.830492823],[247146.35781590577,6753849.563658232]]]},{"id":"SAULAIE_33","group":"SAULAIE","area_ha":0.04850930179469287,"bbox":[247169.29376258823,6753884.535299708,247195.4089494053,6753914.738080981],"geom":[[[247169.29376258823,6753889.304159908],[247186.32540616457,6753884.535299708],[247195.4089494053,6753905.881626324],[247188.82338055584,6753912.240106593],[247182.69198886823,6753914.738080981],[247178.150217248,6753913.375549497],[247169.29376258823,6753889.304159908]]]},{"id":"SAULAIE_34","group":"SAULAIE","area_ha":0.06480044449567794,"bbox":[247156.34971347032,6753849.563658231,247186.32540616457,6753889.304159908],"geom":[[[247169.29376258823,6753889.304159908],[247156.34971347032,6753860.6909987],[247173.60844562761,6753849.563658231],[247186.32540616457,6753884.535299708],[247169.29376258823,6753889.304159908]]]},{"id":"SAULAIE_38","group":"SAULAIE","area_ha":0.08023404117729514,"bbox":[247164.0707252249,6753809.141890812,247206.89506198937,6753851.153278299],"geom":[[[247206.89506198937,6753840.387739975],[247187.35262716748,6753815.241348147],[247188.68521510874,6753811.664401568],[247182.6919888684,6753810.504422297],[247172.24591414147,6753809.141890812],[247164.0707252249,6753811.41277662],[247184.05452035455,6753841.615557897],[247191.54844352795,6753851.153278299],[247206.89506198937,6753840.387739975]]]},{"id":"SAULAIE_39","group":"SAULAIE","area_ha":0.06114619014784694,"bbox":[247202.5246941964,6753854.311927381,247237.19324831228,6753887.260362678],"geom":[[[247220.56631670234,6753854.311927381],[247202.5246941964,6753867.774457881],[247215.39274453453,6753887.260362678],[247222.65957912744,6753884.989476871],[247237.19324831228,6753874.089224979],[247220.56631670234,6753854.311927381]]]},{"id":"SAULAIE_40","group":"SAULAIE","area_ha":0.0883058573782444,"bbox":[247206.8950619895,6753829.806951683,247254.6790690504,6753874.089224979],"geom":[[[247254.6790690504,6753860.236821537],[247221.97831338405,6753829.806951683],[247206.8950619895,6753840.387739975],[247215.6198331156,6753848.428215326],[247237.19324831228,6753874.089224979],[247254.6790690504,6753860.236821537]]]},{"id":"SAULAIE_41","group":"SAULAIE","area_ha":0.08953395520746708,"bbox":[247225.63133470592,6753821.064041313,247274.4357755991,6753860.236821537],"geom":[[[247274.4357755991,6753840.9342921525],[247238.66932408884,6753821.064041313],[247225.63133470592,6753833.20629097],[247254.6790690504,6753860.236821537],[247274.4357755991,6753840.9342921525]]]},{"id":"SAULAIE_42","group":"SAULAIE","area_ha":0.08741348811003254,"bbox":[247238.66932408884,6753805.962650676,247286.5850146832,6753840.9342921525],"geom":[[[247286.5850146832,6753825.265180059],[247286.35792610247,6753822.31302851],[247283.6328631303,6753819.020244084],[247252.97590469295,6753805.962650676],[247238.66932408884,6753821.064041313],[247274.4357755991,6753840.9342921525],[247286.5850146832,6753825.265180059]]]},{"id":"SAULAIE_43","group":"SAULAIE","area_ha":0.10491649625599385,"bbox":[247201.54034109274,6753795.516575948,247252.97590469295,6753833.20629097],"geom":[[[247226.29299642344,6753796.0842974],[247215.84692169662,6753795.516575948],[247201.54034109274,6753810.504422295],[247221.97831338405,6753829.806951683],[247225.63133470592,6753833.20629097],[247238.66932408884,6753821.064041313],[247252.97590469295,6753805.962650676],[247226.29299642344,6753796.0842974]]]},{"id":"SAULAIE_44","group":"SAULAIE","area_ha":0.09814451371235773,"bbox":[247102.189086898,6753785.69499482,247154.07882765995,6753813.286257414],"geom":[[[247110.25073152402,6753813.286257414],[247102.189086898,6753798.979676812],[247129.78034949157,6753785.69499482],[247151.6943975594,6753789.101323534],[247154.07882765995,6753806.700688561],[247110.25073152402,6753813.286257414]]]},{"id":"SAULAIE_45","group":"SAULAIE","area_ha":0.06380050860848278,"bbox":[247286.13083752128,6753792.507652247,247328.36931359046,6753818.849927647],"geom":[[[247286.13083752128,6753814.194611735],[247301.11868386844,6753818.849927647],[247315.99298592506,6753812.491447377],[247327.91513642838,6753813.28625741],[247328.36931359046,6753807.8361314675],[247322.12437761266,6753803.634992719],[247303.50311396917,6753795.800436674],[247294.07893785695,6753792.507652247],[247286.13083752128,6753814.194611735]]]},{"id":"SAULAIE_46","group":"SAULAIE","area_ha":0.08743222439736127,"bbox":[247249.68312026822,6753777.973983064,247294.07893785695,6753814.194611735],"geom":[[[247294.07893785695,6753792.507652247],[247278.06919289537,6753787.057526304],[247259.67501783313,6753777.973983064],[247249.68312026822,6753799.433853968],[247286.13083752128,6753814.194611735],[247294.07893785695,6753792.507652247]]]},{"id":"SAULAIE_47","group":"SAULAIE","area_ha":0.0937667120166123,"bbox":[247211.8728715289,6753767.44275012,247259.67501783313,6753799.433853968],"geom":[[[247248.88831023488,6753772.438698903],[247235.49008395476,6753767.44275012],[247225.61173068068,6753768.578193026],[247216.86882031133,6753774.141863259],[247211.8728715289,6753780.500343528],[247214.4843902106,6753785.723380892],[247228.67742652446,6753791.514139706],[247249.68312026822,6753799.433853968],[247259.67501783313,6753777.973983064],[247248.88831023488,6753772.438698903]]]},{"id":"SAULAIE_48","group":"SAULAIE","area_ha":0.19622968291733414,"bbox":[247149.5370560399,6753727.16291306,247209.37489713758,6753785.524678382],"geom":[[[247185.0764189689,6753785.524678382],[247164.41135809658,6753775.305692239],[247149.5370560399,6753766.449237577],[247163.9571809345,6753750.439492617],[247183.60034319223,6753727.16291306],[247196.43084801995,6753735.79227914],[247198.47464524914,6753744.6487338],[247202.7893282884,6753754.299998494],[247209.37489713758,6753758.501137241],[247207.44464419904,6753771.78581923],[247205.40084696998,6753776.10050227],[247185.0764189689,6753785.524678382]]]},{"id":"SAULAIE_49","group":"SAULAIE","area_ha":0.3016967879559845,"bbox":[247100.94009970257,6753696.846587496,247183.60034319223,6753766.449237577],"geom":[[[247175.87933143787,6753722.50759715],[247169.7479397505,6753714.786585394],[247156.91743492306,6753705.2488649925],[247141.81604428554,6753697.868486112],[247132.1647795922,6753696.846587496],[247122.1728820274,6753699.231017596],[247111.27263013844,6753709.904180902],[247100.94009970257,6753719.896078471],[247110.1371872336,6753727.730634514],[247121.0374391225,6753734.429747655],[247127.6230079719,6753740.901772213],[247135.7981968883,6753751.347846938],[247139.88579134678,6753760.544934471],[247149.5370560399,6753766.449237577],[247163.9571809345,6753750.439492617],[247183.60034319223,6753727.16291306],[247175.87933143787,6753722.50759715]]]},{"id":"LANDE_50","group":"LANDE","area_ha":0.0701334662668407,"bbox":[247190.07236775145,6753590.796220162,247224.24919919448,6753631.217987582],"geom":[[[247190.07236775145,6753627.243937416],[247205.74147984153,6753631.217987582],[247211.41869436705,6753626.10849451],[247219.4803389932,6753606.238243669],[247224.24919919448,6753590.796220162],[247211.9864158195,6753594.77027033],[247203.1299611599,6753597.949510465],[247190.07236775145,6753627.243937416]]]},{"id":"LANDE_51","group":"LANDE","area_ha":0.3487648918192834,"bbox":[247205.74147984153,6753567.548026684,247314.28982156742,6753635.986847785],"geom":[[[247226.7471735854,6753635.078493458],[247242.75691854733,6753635.986847785],[247257.17704344186,6753629.628367514],[247278.0691928952,6753609.531028095],[247291.01324201335,6753592.6129288105],[247302.93539251672,6753582.535873028],[247314.28982156742,6753569.024102457],[247312.58665721008,6753567.548026684],[247270.0075482693,6753576.972202793],[247231.17540091538,6753586.169290323],[247224.24919919448,6753590.796220162],[247219.4803389932,6753606.238243669],[247211.41869436705,6753626.10849451],[247205.74147984153,6753631.217987582],[247226.7471735854,6753635.078493458]]]},{"id":"LANDE_52","group":"LANDE","area_ha":0.23566481568412856,"bbox":[247260.4698278667,6753510.804267496,247359.8210820614,6753573.253627277],"geom":[[[247260.4698278667,6753571.777551501],[247326.7796935233,6753510.804267496],[247359.8210820614,6753528.517176816],[247340.8591855463,6753539.871605866],[247328.70994646224,6753551.453123501],[247323.48690909857,6753557.925148057],[247318.94513747818,6753562.580463968],[247278.40982576704,6753570.187931435],[247261.49172648124,6753573.253627277],[247260.4698278667,6753571.777551501]]]},{"id":"LANDE_53","group":"LANDE","area_ha":0.20359543463168667,"bbox":[247325.75779490895,6753474.413322389,247391.38639482274,6753528.517176816],"geom":[[[247369.3588024642,6753522.556101565],[247381.2809529676,6753515.516355555],[247390.93221766065,6753505.410913698],[247391.38639482274,6753496.668003331],[247377.87462425214,6753484.178131373],[247362.31905645254,6753474.413322389],[247334.61424956843,6753498.598256268],[247325.75779490895,6753506.546356604],[247326.7796935233,6753510.804267496],[247359.8210820614,6753528.517176816],[247369.3588024642,6753522.556101565]]]},{"id":"LANDE_54","group":"LANDE","area_ha":0.18109117274209857,"bbox":[247293.96539356653,6753460.333830365,247362.31905645254,6753506.886989473],"geom":[[[247354.8251332789,6753468.849652154],[247346.19576720055,6753460.333830367],[247333.81943953485,6753460.333830365],[247317.9232388637,6753464.762057694],[247302.0270381926,6753470.09863935],[247293.96539356653,6753477.138385361],[247320.42121325497,6753506.886989473],[247325.75779490895,6753506.546356604],[247334.61424956843,6753498.598256268],[247362.31905645254,6753474.413322389],[247354.8251332789,6753468.849652154]]]},{"id":"LANDE_55","group":"LANDE","area_ha":0.17347041859392776,"bbox":[247264.67096661543,6753477.138385361,247324.16817484156,6753534.449865995],"geom":[[[247296.69045653864,6753534.449865995],[247324.16817484156,6753508.9024006305],[247324.061139277,6753506.654653772],[247320.42121325497,6753506.886989473],[247293.96539356653,6753477.138385361],[247275.9118513756,6753492.665567086],[247264.67096661543,6753508.221134889],[247296.69045653864,6753534.449865995]]]},{"id":"LANDE_56","group":"LANDE","area_ha":0.2523547938194126,"bbox":[247216.86882031115,6753508.221134889,247296.69045653864,6753580.179828998],"geom":[[[247255.92805624614,6753516.140849149],[247250.59147459234,6753522.272240838],[247248.20704449154,6753531.58287266],[247242.8704628378,6753539.9851501575],[247233.9004638876,6753550.998946338],[247223.00021199888,6753569.506665691],[247216.86882031115,6753580.179828998],[247221.4105919316,6753579.044386093],[247227.88261649065,6753578.703753223],[247237.4203368933,6753577.341221736],[247251.95400607842,6753574.729703052],[247258.9937520899,6753569.620209982],[247296.69045653864,6753534.449865995],[247264.67096661543,6753508.221134889],[247255.92805624614,6753516.140849149]]]},{"id":"LANDE_57","group":"LANDE","area_ha":1.6281432119302452,"bbox":[247073.34883710864,6753480.147309057,247264.33033374394,6753662.215578885],"geom":[[[247264.33033374394,6753497.178952636],[247248.8883102347,6753516.254393438],[247228.45033794304,6753550.998946334],[247211.8728715289,6753574.843247342],[247195.74958227674,6753598.006282604],[247184.16806464485,6753618.614571332],[247170.99692694587,6753639.733809366],[247160.32376363804,6753650.861149835],[247139.8857913466,6753662.215578885],[247113.7706045297,6753638.8254550425],[247097.19313811552,6753616.627546247],[247080.38858312002,6753587.106030716],[247073.34883710864,6753569.847298558],[247121.9457934464,6753536.2381885685],[247182.80553315883,6753506.035407294],[247213.68958017713,6753486.732877907],[247236.17134969775,6753480.147309057],[247252.9759046929,6753485.14325784],[247264.33033374394,6753497.178952636]]]},{"id":"CLOS DU JONC_58","group":"CLOS DU JONC","area_ha":0.13090251973569395,"bbox":[247041.7835243474,6753626.505899524,247091.74301217118,6753681.007158966],"geom":[[[247075.8468115001,6753626.505899524],[247041.7835243474,6753653.302352081],[247057.45263643755,6753681.007158966],[247091.74301217118,6753647.398048975],[247075.8468115001,6753626.505899524]]]},{"id":"CLOS DU JONC_59","group":"CLOS DU JONC","area_ha":0.1318914831660688,"bbox":[247057.45263643755,6753647.398048975,247101.73490973574,6753709.847408753],"geom":[[[247091.74301217118,6753647.398048975],[247100.59946683078,6753658.071212283],[247101.73490973574,6753662.158806739],[247099.91820108768,6753671.242349983],[247084.0220004166,6753694.4053852465],[247071.98630562244,6753709.847408753],[247057.45263643755,6753681.007158966],[247091.74301217118,6753647.398048975]]]},{"id":"CLOS DU JONC_60","group":"CLOS DU JONC","area_ha":0.12990258593559265,"bbox":[247025.54669080465,6753602.775142805,247075.8468115001,6753653.302352081],"geom":[[[247041.7835243474,6753653.302352081],[247025.54669080465,6753622.758937935],[247055.86301637033,6753602.775142805],[247075.8468115001,6753626.505899524],[247041.7835243474,6753653.302352081]]]},{"id":"CLOS DU JONC_61","group":"CLOS DU JONC","area_ha":0.12864378123283388,"bbox":[247004.76808564173,6753576.65995599,247055.86301637033,6753622.758937935],"geom":[[[247025.54669080465,6753622.758937935],[247013.17036313924,6753600.163624125],[247004.76808564173,6753583.245524839],[247020.66428631288,6753578.1360317655],[247027.0227665815,6753576.65995599],[247038.1501070513,6753581.315271901],[247055.86301637033,6753602.775142805],[247025.54669080465,6753622.758937935]]]},{"id":"CLOS DU JONC_62","group":"CLOS DU JONC","area_ha":0.20176567334551365,"bbox":[246971.04543136084,6753583.245524839,247022.54945146886,6753651.031466273],"geom":[[[246987.16872061288,6753590.058182269],[246977.06327875756,6753598.006282602],[246974.4517600761,6753607.998180171],[246971.04543136084,6753622.986026516],[246973.3163171708,6753632.410202628],[246977.7445445009,6753651.031466273],[246995.34390952945,6753638.655138605],[247012.60264168656,6753624.689190871],[247022.54945146886,6753617.286913827],[247013.17036313924,6753600.163624125],[247004.76808564173,6753583.245524839],[246987.16872061288,6753590.058182269]]]},{"id":"CLOS DU JONC_63","group":"CLOS DU JONC","area_ha":0.1313615508761257,"bbox":[246930.9642968112,6753593.350966693,246969.6828998747,6753633.659189823],"geom":[[[246969.6828998747,6753598.006282605],[246964.45986251126,6753594.032232437],[246950.60745906923,6753593.350966695],[246931.3049296827,6753593.350966693],[246930.9642968112,6753611.858686047],[246935.6196127222,6753621.509950741],[246944.9302445437,6753629.344506783],[246952.7648005889,6753632.750835499],[246961.62125524844,6753633.659189823],[246967.07138119295,6753633.545645535],[246969.6828998747,6753598.006282605]]]},{"id":"CLOS DU JONC_64","group":"CLOS DU JONC","area_ha":0.12053822785606608,"bbox":[246878.73392317747,6753588.383403985,246930.05594248697,6753621.992513975],"geom":[[[246928.92049958208,6753610.524540633],[246930.05594248697,6753598.602390128],[246928.5798667107,6753592.925175604],[246916.54417191667,6753588.383403985],[246905.53037573758,6753589.632391181],[246888.49873216136,6753594.287707093],[246878.73392317747,6753598.829478712],[246886.68202351307,6753619.948716745],[246892.35923803854,6753621.992513975],[246928.92049958208,6753610.524540633]]]},{"id":"CLOS DU JONC_65","group":"CLOS DU JONC","area_ha":0.15872721288520844,"bbox":[246866.5846840929,6753556.704546932,246922.10784215148,6753598.829478712],"geom":[[[246922.10784215148,6753586.566695333],[246919.26923488907,6753570.670494665],[246916.77126049774,6753558.748344162],[246908.82316016208,6753556.704546932],[246895.08430101053,6753558.861888451],[246881.5725304403,6753563.176571492],[246868.401392741,6753572.37365902],[246866.5846840929,6753577.483152093],[246871.01291142276,6753589.973024051],[246878.73392317747,6753598.829478712],[246888.49873216136,6753594.287707093],[246905.53037573758,6753589.632391181],[246916.54417191667,6753588.383403985],[246922.10784215148,6753586.566695333]]]},{"id":"CLOS DU JONC_66","group":"CLOS DU JONC","area_ha":0.16947426162487828,"bbox":[246967.07138119295,6753598.006282602,247010.44530016696,6753701.161270531],"geom":[[[247008.401502938,6753682.199374016],[246993.1717844723,6753640.182633002],[246977.7445445009,6753651.031466273],[246973.3163171708,6753632.410202628],[246971.04543136084,6753622.986026516],[246974.4517600761,6753607.998180171],[246977.06327875756,6753598.006282602],[246969.6828998747,6753598.006282605],[246967.07138119295,6753633.545645535],[246968.20682409825,6753644.07687848],[246970.59125419863,6753663.720040735],[246972.40796284674,6753673.115830774],[246979.9018860205,6753682.085829727],[246986.9416320321,6753695.143423137],[246989.32606213266,6753701.161270531],[247010.44530016696,6753686.059879893],[247008.401502938,6753682.199374016]]]},{"id":"CLOS DU JONC_67","group":"CLOS DU JONC","area_ha":0.18223147719926755,"bbox":[246993.1717844723,6753613.244972795,247042.90423003543,6753715.09883219],"geom":[[[247025.66023509525,6753697.613011453],[247010.89947732928,6753680.354279297],[247042.90423003543,6753655.283889675],[247041.7835243474,6753653.302352081],[247025.54669080465,6753622.758937935],[247020.3355239691,6753613.244972795],[247020.3355239688,6753613.244972795],[247022.54945146886,6753617.286913827],[247012.60264168656,6753624.689190871],[246995.34390952945,6753638.655138605],[246993.1717844723,6753640.182633002],[247008.401502938,6753682.199374016],[247010.44530016696,6753686.059879893],[247014.30580604426,6753687.280481014],[247028.9530195198,6753703.85794743],[247037.014664146,6753713.0550349625],[247039.96681569907,6753715.09883219],[247041.2158028948,6753714.644655028],[247025.66023509525,6753697.613011453]]]},{"id":"CLOS DU JONC_68","group":"CLOS DU JONC","area_ha":0.145593466716446,"bbox":[246986.94163203193,6753686.059879893,247043.14605583355,6753728.042881309],"geom":[[[246987.84998635593,6753707.718453309],[246986.94163203193,6753719.867692393],[246991.2563150712,6753728.042881309],[247000.68049118342,6753726.907438404],[247011.69428736268,6753724.977185466],[247023.9570707376,6753724.06883114],[247038.8313727941,6753722.479211075],[247043.14605583355,6753721.003135298],[247039.96681569907,6753715.09883219],[247037.014664146,6753713.0550349625],[247028.9530195198,6753703.85794743],[247014.30580604426,6753687.280481014],[247010.44530016696,6753686.059879893],[246989.32606213266,6753701.161270531],[246987.84998635593,6753707.718453309]]]},{"id":"CLOS DU JONC_69","group":"CLOS DU JONC","area_ha":0.19110850512441246,"bbox":[247010.89947732928,6753653.302352081,247071.98630562244,6753715.325920771],"geom":[[[247046.77947312972,6753715.325920771],[247064.83301532082,6753712.600857802],[247071.98630562244,6753709.847408753],[247057.45263643755,6753681.007158966],[247041.7835243474,6753653.302352081],[247042.90423003543,6753655.283889675],[247010.89947732928,6753680.354279297],[247025.66023509525,6753697.613011453],[247041.2158028948,6753714.644655028],[247046.77947312972,6753715.325920771]]]},{"id":"PYLONE_70","group":"PYLONE","area_ha":0.14086465789882932,"bbox":[246943.45416876703,6753644.701372076,246971.61315281322,6753742.349461914],"geom":[[[246963.43796389655,6753742.349461914],[246959.80454660044,6753736.218070228],[246954.80859781808,6753700.110985844],[246949.35847187362,6753671.043647474],[246943.45416876703,6753644.701372076],[246962.30252099154,6753645.836814982],[246965.7088497068,6753667.637318758],[246968.888089841,6753702.6089602355],[246971.38606423227,6753732.357564349],[246971.61315281322,6753737.353513131],[246963.43796389655,6753742.349461914]]]},{"id":"PYLONE_71","group":"PYLONE","area_ha":0.22611723576169462,"bbox":[246913.25138749182,6753674.837740652,246963.43796389655,6753753.022625223],"geom":[[[246932.0997397162,6753677.629216323],[246913.25138749182,6753679.445924972],[246938.45821998484,6753753.022625223],[246963.43796389655,6753742.349461914],[246959.80454660044,6753736.218070228],[246954.80859781808,6753700.110985844],[246950.0698643446,6753674.837740652],[246932.0997397162,6753677.629216323]]]},{"id":"PYLONE_72","group":"PYLONE","area_ha":0.16335991874597966,"bbox":[246902.35113560304,6753632.665677282,246950.0698643446,6753679.445924972],"geom":[[[246937.32277707936,6753638.569980387],[246902.80531276512,6753632.665677282],[246902.35113560304,6753636.299094579],[246905.9845528995,6753658.780864102],[246913.25138749182,6753679.445924972],[246932.0997397162,6753677.629216323],[246950.0698643446,6753674.837740652],[246949.35847187362,6753671.043647474],[246943.45416876703,6753644.701372076],[246937.32277707936,6753638.569980387]]]},{"id":"PYLONE_73","group":"PYLONE","area_ha":0.1629063393936958,"bbox":[246882.36734047346,6753716.801996553,246936.75505562732,6753763.241611367],"geom":[[[246909.8450587765,6753720.094780972],[246882.59442905476,6753730.654399993],[246882.36734047346,6753734.401361579],[246886.56847922236,6753740.4192089755],[246894.97075672005,6753754.044523835],[246902.35113560304,6753760.516548394],[246915.63581759256,6753763.241611367],[246929.48822103447,6753758.472751165],[246936.75505562732,6753753.817435256],[246923.24328505696,6753716.801996553],[246909.8450587765,6753720.094780972]]]},{"id":"PYLONE_74","group":"PYLONE","area_ha":0.3599889919149689,"bbox":[246868.2878484506,6753632.665677282,246938.45821998484,6753753.817435256],"geom":[[[246884.411137703,6753633.17662659],[246868.2878484506,6753634.993335238],[246873.73797439504,6753679.956874278],[246882.59442905476,6753730.654399993],[246909.8450587765,6753720.094780972],[246923.24328505696,6753716.801996553],[246936.75505562732,6753753.817435256],[246938.45821998484,6753753.022625223],[246913.25138749182,6753679.445924972],[246905.9845528995,6753658.780864102],[246902.35113560304,6753636.299094579],[246902.80531276512,6753632.665677282],[246884.411137703,6753633.17662659]]]},{"id":"PYLONE_75","group":"PYLONE","area_ha":0.30605317049142905,"bbox":[246827.07127099612,6753603.030617459,246882.59442905476,6753736.956108112],"geom":[[[246865.44924118806,6753622.560235426],[246857.72822943347,6753603.030617459],[246848.87177477358,6753605.755680428],[246834.7922827507,6753611.37612281],[246827.07127099612,6753623.411817604],[246829.56924538722,6753630.678652197],[246877.4849359818,6753736.956108112],[246882.36734047346,6753734.401361579],[246882.59442905476,6753730.654399993],[246873.73797439504,6753679.956874278],[246868.2878484506,6753634.993335238],[246865.44924118806,6753622.560235426]]]},{"id":"PYLONE_76","group":"PYLONE","area_ha":0.43508366264160725,"bbox":[246781.42646621162,6753623.411817604,246877.4849359818,6753739.567626794],"geom":[[[246817.53355059325,6753638.711910749],[246806.40621012327,6753653.444282441],[246797.66329975455,6753668.432128791],[246783.2431748599,6753687.706272105],[246781.42646621162,6753695.739530656],[246797.89038833528,6753703.006365246],[246816.73874055978,6753709.024212646],[246831.49949832604,6753712.316997073],[246843.6487374105,6753716.4045915315],[246855.91152078542,6753724.466236157],[246858.7501280479,6753730.484083554],[246866.130506931,6753739.567626794],[246877.4849359818,6753736.956108112],[246829.56924538722,6753630.678652197],[246827.07127099612,6753623.411817604],[246817.53355059325,6753638.711910749]]]},{"id":"KERVITO_77","group":"KERVITO","area_ha":0.09724334843028337,"bbox":[246930.62366393977,6753750.7233533375,246984.6707462215,6753790.0096778525],"geom":[[[246984.6707462215,6753768.209174072],[246971.84024139418,6753772.523857115],[246950.7210033596,6753782.515754676],[246938.1175871131,6753790.0096778525],[246930.62366393977,6753774.340565763],[246948.33657325874,6753763.440313872],[246964.34631822078,6753751.858796244],[246971.49960852275,6753750.7233533375],[246979.44770885824,6753758.671453672],[246981.9456832495,6753761.623605225],[246984.6707462215,6753768.209174072]]]},{"id":"KERVITO_78","group":"KERVITO","area_ha":0.2019707204170525,"bbox":[246871.80772145622,6753774.340565763,246938.1175871131,6753826.2019204525],"geom":[[[246926.42252519098,6753777.604964114],[246916.65771620697,6753780.557115665],[246902.57822418405,6753779.19458418],[246888.7258207422,6753774.539268272],[246877.03075881966,6753777.264331242],[246873.73797439504,6753785.325975867],[246871.80772145622,6753796.793949209],[246875.44113875262,6753818.026731534],[246880.2099989541,6753826.2019204525],[246905.3032871564,6753810.30571978],[246936.07378988428,6753792.365721881],[246938.1175871131,6753790.0096778525],[246930.62366393977,6753774.340565763],[246926.42252519098,6753777.604964114]]]},{"id":"KERVITO_79","group":"KERVITO","area_ha":0.2243417863721028,"bbox":[246878.16620172485,6753790.0096778525,246943.22708018607,6753852.515809775],"geom":[[[246878.16620172485,6753841.274925016],[246882.36734047357,6753852.515809775],[246932.21328400692,6753837.982140593],[246943.22708018607,6753834.916444749],[246938.1175871131,6753790.0096778525],[246936.07378988428,6753792.365721881],[246905.3032871564,6753810.30571978],[246880.2099989541,6753826.2019204525],[246878.16620172485,6753841.274925016]]]},{"id":"KERVITO_80","group":"KERVITO","area_ha":0.17951237987659405,"bbox":[246882.25379618315,6753834.916444749,246947.99594038742,6753874.401471772],"geom":[[[246883.04860621667,6753858.39172681],[246882.25379618315,6753868.042991504],[246886.45493493194,6753874.401471772],[246900.4208826645,6753873.379573157],[246947.99594038742,6753868.610712956],[246943.22708018607,6753834.916444749],[246932.21328400692,6753837.982140593],[246882.36734047357,6753852.515809775],[246883.04860621667,6753858.39172681]]]},{"id":"KERVITO_81","group":"KERVITO","area_ha":0.17182738175047563,"bbox":[246886.45493493194,6753868.610712956,246949.4720161641,6753904.433936612],"geom":[[[246887.36328925588,6753881.497989928],[246889.74771935656,6753893.760773302],[246892.92695949093,6753904.433936612],[246949.4720161641,6753895.463937663],[246947.99594038742,6753868.610712956],[246900.4208826645,6753873.379573157],[246886.45493493194,6753874.401471772],[246887.36328925588,6753881.497989928]]]},{"id":"KERVITO_82","group":"KERVITO","area_ha":0.10017148056514562,"bbox":[246892.92695949093,6753895.463937663,246950.60745906917,6753923.395833127],"geom":[[[246898.26354114467,6753915.901909951],[246904.62202141335,6753923.395833127],[246950.60745906917,6753912.382036947],[246949.4720161641,6753895.463937663],[246892.92695949093,6753904.433936612],[246898.26354114467,6753915.901909951]]]},{"id":"KERVITO_83","group":"KERVITO","area_ha":0.1574086110019125,"bbox":[246904.62202141335,6753912.382036947,246956.39821788511,6753954.393424436],"geom":[[[246906.77936293313,6753935.204439342],[246915.97645046416,6753948.48912133],[246928.80695529166,6753954.393424436],[246949.47201616404,6753952.690260079],[246956.39821788511,6753947.694311296],[246953.90024349396,6753930.322034849],[246950.60745906917,6753912.382036947],[246904.62202141335,6753923.395833127],[246906.77936293313,6753935.204439342]]]},{"id":"KERVITO_84","group":"KERVITO","area_ha":0.13505577729984652,"bbox":[246955.60340785148,6753895.038146573,247000.68049118324,6753929.328522307],"geom":[[[246958.78264798585,6753928.533712274],[246956.6253064663,6753920.92624481],[246955.60340785148,6753899.8070067745],[246981.49150608748,6753896.968399512],[246997.84188392066,6753895.038146573],[247000.68049118324,6753929.328522307],[246958.78264798585,6753928.533712274]]]},{"id":"KERVITO_85","group":"KERVITO","area_ha":0.15171748561719434,"bbox":[246952.31062342663,6753858.249796447,246997.84188392066,6753899.8070067745],"geom":[[[246994.3220109149,6753858.249796447],[246952.31062342663,6753865.7437196225],[246955.60340785148,6753899.8070067745],[246981.49150608748,6753896.968399512],[246997.84188392066,6753895.038146573],[246994.3220109149,6753858.249796447]]]},{"id":"KERVITO_86","group":"KERVITO","area_ha":0.18866459050639534,"bbox":[246946.2164884595,6753812.958043433,246994.3220109149,6753865.7437196225],"geom":[[[246990.5413408666,6753812.958043433],[246946.2164884595,6753826.114988094],[246952.31062342663,6753865.7437196225],[246994.3220109149,6753858.249796447],[246990.5413408666,6753812.958043433]]]},{"id":"KERVITO_87","group":"KERVITO","area_ha":0.17664254363938234,"bbox":[246942.6398433083,6753774.157830408,246990.5413408666,6753826.114988094],"geom":[[[246984.40994917921,6753776.584839618],[246976.23476026265,6753774.157830408],[246963.7165022341,6753778.117687542],[246949.1544469765,6753786.803825766],[246942.6398433083,6753794.212590719],[246943.27852994262,6753806.730848749],[246946.2164884595,6753826.114988094],[246990.5413408666,6753812.958043433],[246984.40994917921,6753776.584839618]]]},{"id":"KERVITO_88","group":"KERVITO","area_ha":0.147771841003187,"bbox":[247004.0353801215,6753896.885026159,247041.38079694175,6753952.063992343],"geom":[[[247041.38079694175,6753947.465448573],[247037.93188911764,6753934.563978565],[247023.63551433187,6753896.885026159],[247009.57420256332,6753901.639682576],[247006.89171869983,6753903.1725304965],[247004.0353801215,6753905.251776965],[247005.6143454318,6753949.5092458045],[247011.87347444624,6753952.063992343],[247035.504879908,6753949.764720457],[247041.38079694175,6753947.465448573]]]},{"id":"KERVITO_89","group":"KERVITO","area_ha":0.1447401467929536,"bbox":[246993.63263351895,6753847.7664649915,247024.00852049427,6753929.497145759],"geom":[[[247022.2201979186,6753847.7664649915],[246993.63263351895,6753849.991178173],[246994.3220109149,6753858.249796447],[246997.84188392066,6753895.038146573],[247000.68049118324,6753929.328522307],[247004.19336791377,6753929.497145759],[247002.5486495882,6753906.33402934],[247006.89171869983,6753903.1725304965],[247009.57420256332,6753901.639682576],[247023.9765861623,6753896.769696992],[247020.94282465026,6753886.7263496695],[247017.49391682597,6753875.86867689],[247021.83698593802,6753869.737285201],[247024.00852049427,6753864.883266785],[247022.22019791877,6753853.259170045],[247022.2201979186,6753847.7664649915]]]},{"id":"KERVITO_90","group":"KERVITO","area_ha":0.2567167962010251,"bbox":[246984.40994917921,6753758.334369049,247022.76308155758,6753849.991178173],"geom":[[[247022.76308155758,6753844.173852675],[247021.10249630886,6753827.568000185],[247016.7594271968,6753808.662875817],[247016.63168987015,6753792.184760658],[247019.82512304065,6753775.451170845],[247020.208335021,6753760.378166277],[247013.31051937275,6753758.334369049],[247004.6243811486,6753760.633640932],[246994.40539500304,6753765.48765935],[246992.10612312052,6753772.257737675],[246984.40994917921,6753776.584839618],[246990.5413408666,6753812.958043433],[246993.63263351895,6753849.991178173],[247022.2201979186,6753847.7664649915],[247022.76308155758,6753844.173852675]]]},{"id":"QG_91","group":"QG","area_ha":0.14492009056545793,"bbox":[247029.27768522553,6753735.405518885,247069.64268050116,6753788.161034861],"geom":[[[247029.27768522553,6753781.00774456],[247031.19374512788,6753762.2303575175],[247031.19374512788,6753746.646403646],[247040.00762067852,6753741.536910572],[247053.03682801424,6753742.047859877],[247058.27405841392,6753735.405518885],[247064.5331874285,6753739.2376386905],[247063.383551487,6753750.86173543],[247062.10617821856,6753758.653712365],[247065.2996113894,6753767.5953252455],[247069.64268050116,6753774.876352873],[247063.00033950643,6753775.515039505],[247059.8069063357,6753788.161034861],[247029.27768522553,6753781.00774456]]]},{"id":"QG_92","group":"QG","area_ha":0.09749329611100256,"bbox":[247056.10252385808,6753792.440235309,247096.0843071533,6753834.210341182],"geom":[[[247056.10252385808,6753792.440235309],[247063.1280768332,6753834.210341182],[247096.0843071533,6753828.589898801],[247088.80327952438,6753815.816166118],[247077.0514454568,6753803.1701707635],[247072.32516436442,6753793.845345906],[247056.10252385808,6753792.440235309]]]},{"id":"QG_93","group":"QG","area_ha":0.12583757540635998,"bbox":[247029.0222105721,6753791.16286204,247063.1280768332,6753838.425672967],"geom":[[[247033.49301701033,6753791.16286204],[247029.0222105721,6753798.95483898],[247029.40542255237,6753811.345359681],[247033.23754235695,6753821.947557807],[247034.64265295217,6753838.425672967],[247063.1280768332,6753834.210341182],[247056.10252385808,6753792.440235309],[247033.49301701033,6753791.16286204]]]},{"id":"QG_94","group":"QG","area_ha":0.08629654465275817,"bbox":[247034.64265295217,6753834.210341182,247071.30326574994,6753865.857263901],"geom":[[[247035.28133958607,6753852.189369933],[247038.09156077623,6753865.857263901],[247071.30326574994,6753859.725872216],[247063.1280768332,6753834.210341182],[247034.64265295217,6753838.425672967],[247035.28133958607,6753852.189369933]]]},{"id":"QG_95","group":"QG","area_ha":0.08939042045995593,"bbox":[247063.1280768332,6753828.589898801,247107.06971726008,6753859.725872216],"geom":[[[247107.06971726008,6753851.03973399],[247096.0843071533,6753828.589898801],[247063.1280768332,6753834.210341182],[247071.30326574994,6753859.725872216],[247107.06971726008,6753851.03973399]]]},{"id":"QG_96","group":"QG","area_ha":0.09804434167835861,"bbox":[247038.09156077623,6753859.725872216,247079.98940397374,6753893.256920504],"geom":[[[247041.5404686004,6753893.256920504],[247038.09156077623,6753865.857263901],[247071.30326574994,6753859.725872216],[247079.98940397374,6753884.443044954],[247041.5404686004,6753893.256920504]]]},{"id":"QG_97","group":"QG","area_ha":0.10688129753619433,"bbox":[247071.30326574994,6753851.03973399,247123.03688311263,6753884.443044954],"geom":[[[247123.03688311263,6753874.735008116],[247107.06971726008,6753851.03973399],[247071.30326574994,6753859.725872216],[247079.98940397374,6753884.443044954],[247123.03688311263,6753874.735008116]]]},{"id":"QG_98","group":"QG","area_ha":0.08845591469556094,"bbox":[247041.5404686004,6753884.443044954,247088.54780487082,6753912.002373216],"geom":[[[247041.5404686004,6753893.256920504],[247045.11711375136,6753912.002373216],[247088.54780487082,6753906.765142815],[247079.98940397374,6753884.443044954],[247041.5404686004,6753893.256920504]]]},{"id":"QG_99","group":"QG","area_ha":0.10384478416126221,"bbox":[247045.11711375136,6753906.765142815,247098.38357903616,6753933.845456102],"geom":[[[247088.54780487082,6753906.765142815],[247098.38357903616,6753926.564428475],[247070.02589248156,6753931.546184218],[247048.18280959502,6753933.845456102],[247045.11711375136,6753912.002373216],[247088.54780487082,6753906.765142815]]]},{"id":"QG_100","group":"QG","area_ha":0.03264288577660918,"bbox":[247112.94563429372,6753900.873258616,247139.32339228265,6753920.209496463],"geom":[[[247119.01315731765,6753920.209496463],[247123.675569747,6753919.890153148],[247139.32339228265,6753916.760588641],[247131.21207202942,6753900.873258616],[247112.94563429372,6753905.407933718],[247116.58614810836,6753913.263779318],[247119.01315731765,6753920.209496463]]]},{"id":"QG_101","group":"QG","area_ha":0.07345371256683851,"bbox":[247079.98940397374,6753881.016413173,247113.00950295728,6753924.144986347],"geom":[[[247111.60439236223,6753913.758761459],[247103.94015275274,6753898.110938922],[247094.49616178242,6753881.171491265],[247095.18381068768,6753881.016413173],[247095.18381068768,6753881.016413173],[247079.98940397374,6753884.443044954],[247088.54780487082,6753906.765142815],[247097.1816626254,6753924.144986347],[247113.00950295728,6753921.423001068],[247111.60439236223,6753913.758761459]]]},{"id":"QG_102","group":"QG","area_ha":0.0963779693203047,"bbox":[247094.49616178242,6753874.735008116,247149.92559040867,6753929.69399298],"geom":[[[247111.60439236223,6753913.758761459],[247116.58614810836,6753913.263779318],[247112.94563429372,6753905.407933718],[247131.21207202942,6753900.873258616],[247139.32339228265,6753916.760588641],[247141.23945218493,6753918.836320202],[247145.58252129657,6753929.055306347],[247149.92559040867,6753929.69399298],[247146.9876318918,6753922.412965352],[247123.03688311263,6753874.735008116],[247118.4177535937,6753875.776710915],[247094.49616178242,6753881.171491265],[247103.94015275274,6753898.110938922],[247111.60439236223,6753913.758761459]]]},{"id":"SAULAIE_103","group":"SAULAIE","area_ha":0.0521919823653996,"bbox":[247186.32540616457,6753869.299377975,247214.10696247744,6753905.881626324],"geom":[[[247214.10696247744,6753888.458477777],[247202.03990514384,6753869.299377975],[247186.32540616457,6753884.535299708],[247195.4089494053,6753905.881626324],[247214.10696247744,6753888.458477777]]]},{"id":"SAULAIE_104","group":"SAULAIE","area_ha":0.0653112708831206,"bbox":[247173.60844562761,6753841.615557897,247215.39274453453,6753888.458477777],"geom":[[[247214.10696247744,6753888.458477777],[247215.39274453453,6753887.260362678],[247202.94939900126,6753868.417582298],[247191.54844352795,6753851.153278299],[247184.05452035455,6753841.615557897],[247173.60844562761,6753849.563658231],[247186.32540616457,6753884.535299708],[247202.03990514384,6753869.299377975],[247214.10696247744,6753888.458477777]]]},{"id":"SAULAIE_105","group":"SAULAIE","area_ha":0.04106308197081089,"bbox":[247191.54844352795,6753840.387739975,247220.56631670234,6753867.774457881],"geom":[[[247202.5246941964,6753867.774457881],[247220.56631670234,6753854.311927381],[247215.6198331156,6753848.428215326],[247206.8950619895,6753840.387739975],[247191.54844352795,6753851.153278299],[247202.5246941964,6753867.774457881]]]},{"id":"SAULAIE_106","group":"SAULAIE","area_ha":0.048654198058135804,"bbox":[247187.35262716748,6753810.504422295,247221.97831338405,6753840.387739975],"geom":[[[247188.68521510874,6753811.664401568],[247187.35262716748,6753815.241348147],[247206.89506198937,6753840.387739975],[247221.97831338405,6753829.806951683],[247201.54034109274,6753810.504422295],[247196.77148089127,6753813.229485268],[247188.68521510874,6753811.664401568]]]},{"id":"SAULAIE_107","group":"SAULAIE","area_ha":0.06096160088405013,"bbox":[247139.5451584753,6753811.41277662,247174.05916365236,6753842.038399739],"geom":[[[247148.46232876665,6753842.038399739],[247174.05916365236,6753826.508939242],[247164.0707252249,6753811.41277662],[247156.3497134702,6753813.002396686],[247145.6765501625,6753815.727459659],[247139.5451584753,6753820.950497025],[247148.46232876665,6753842.038399739]]]},{"id":"SAULAIE_108","group":"SAULAIE","area_ha":0.061592482936382295,"bbox":[247148.46232876665,6753826.508939242,247184.05452035455,6753860.6909987],"geom":[[[247174.05916365236,6753826.508939242],[247148.46232876665,6753842.038399739],[247156.34971347032,6753860.6909987],[247173.60844562761,6753849.563658231],[247184.05452035455,6753841.615557897],[247174.05916365236,6753826.508939242]]]},{"id":"SAULAIE_109","group":"SAULAIE","area_ha":0.07152549979239702,"bbox":[247141.36186712305,6753884.308211128,247174.0075717799,6753925.915357572],"geom":[[[247157.90001632663,6753925.915357572],[247174.0075717799,6753915.930557118],[247160.8914850909,6753884.308211128],[247141.36186712305,6753892.483400041],[247157.90001632663,6753925.915357572]]]},{"id":"COTEAU NORD_110","group":"COTEAU NORD","area_ha":0.23649468104504048,"bbox":[246996.64080292714,6754059.192059476,247081.96933253965,6754105.428620355],"geom":[[[246996.64080292714,6754091.676512422],[247004.68785757315,6754094.707221313],[247025.25395943067,6754100.319127281],[247055.0167565801,6754102.873873818],[247069.70654916472,6754105.428620355],[247081.96933253965,6754099.9359153025],[247080.82610922668,6754094.965454501],[247078.2724699225,6754094.707221313],[247053.9847383956,6754089.657296937],[247050.37764955504,6754061.522003981],[247003.15744090447,6754059.192059476],[246996.64080292714,6754091.676512422]]]},{"id":"COTEAU NORD_111","group":"COTEAU NORD","area_ha":0.08588725654250011,"bbox":[247050.37764955504,6754059.173705978,247080.82610922668,6754094.965454501],"geom":[[[247080.82610922668,6754094.965454501],[247077.32127925265,6754059.173705978],[247050.37764955504,6754061.522003981],[247053.9847383956,6754089.657296937],[247078.2724699225,6754094.707221313],[247080.82610922668,6754094.965454501]]]},{"id":"COTEAU NORD_112","group":"COTEAU NORD","area_ha":0.12976153727918863,"bbox":[247045.8920364381,6753996.836386972,247095.34602376848,6754029.539149593],"geom":[[[247087.18143612653,6753996.836386972],[247045.8920364381,6754002.448538387],[247046.53008812474,6754029.539149593],[247095.34602376848,6754026.413005931],[247087.18143612653,6753996.836386972]]]},{"id":"COTEAU NORD_113","group":"COTEAU NORD","area_ha":0.07484759532250464,"bbox":[247016.88515229156,6754002.448538387,247046.53008812474,6754031.065486826],"geom":[[[247045.8920364381,6754002.448538387],[247016.88515229156,6754006.39122167],[247017.9657770429,6754031.065486826],[247046.53008812474,6754029.539149593],[247045.8920364381,6754002.448538387]]]},{"id":"COTEAU NORD_114","group":"COTEAU NORD","area_ha":0.07293149599237367,"bbox":[246985.19015062886,6754006.39122167,247017.9657770429,6754032.683718866],"geom":[[[247016.88515229156,6754006.39122167],[246985.19015062886,6754010.699280147],[246987.68172034994,6754032.683718866],[247017.9657770429,6754031.065486826],[247016.88515229156,6754006.39122167]]]},{"id":"COTEAU NORD_115","group":"COTEAU NORD","area_ha":0.07716781420707702,"bbox":[247156.24156306835,6754039.271990398,247187.68749808928,6754080.579456688],"geom":[[[247178.8510784328,6754039.271990398],[247156.24156306835,6754047.725279683],[247167.4878005816,6754080.579456688],[247187.68749808928,6754069.036772397],[247178.8510784328,6754039.271990398]]]},{"id":"COTEAU NORD_116","group":"COTEAU NORD","area_ha":0.09045257029756903,"bbox":[247133.67720383464,6754047.725279683,247167.4878005816,6754092.603086157],"geom":[[[247156.24156306835,6754047.725279683],[247133.67720383464,6754056.161685911],[247144.40243200137,6754092.603086157],[247167.4878005816,6754080.579456688],[247156.24156306835,6754047.725279683]]]},{"id":"COTEAU NORD_117","group":"COTEAU NORD","area_ha":0.07837190849259495,"bbox":[247113.46669876517,6754056.161685911,247144.40243200137,6754098.133955711],"geom":[[[247133.67720383464,6754056.161685911],[247113.46669876517,6754063.718028591],[247124.44320708315,6754098.133955711],[247144.40243200137,6754092.603086157],[247133.67720383464,6754056.161685911]]]},{"id":"COTEAU NORD_118","group":"COTEAU NORD","area_ha":0.09612402491793036,"bbox":[247180.95426558692,6753996.414050408,247219.3819426227,6754037.403393799],"geom":[[[247186.17703673884,6754037.403393799],[247219.3819426227,6754022.2997734165],[247211.2538118483,6754000.742557014],[247206.4443600609,6753996.414050408],[247180.95426558692,6754008.678152464],[247186.17703673884,6754037.403393799]]]},{"id":"COTEAU NORD_119","group":"COTEAU NORD","area_ha":0.09540944382683374,"bbox":[247214.62042809982,6753985.755830833,247248.2738225725,6754040.420534263],"geom":[[[247248.2738225725,6754032.677753097],[247227.91798864823,6753985.755830833],[247214.62042809982,6753991.123653442],[247214.86090068897,6753998.578303709],[247221.59413319145,6754018.778001216],[247229.28925605176,6754038.256280959],[247235.06059819687,6754040.420534263],[247248.2738225725,6754032.677753097]]]},{"id":"COTEAU NORD_120","group":"COTEAU NORD","area_ha":0.09181416868381202,"bbox":[247112.46836514754,6753965.748228071,247144.7859086889,6754018.59954681],"geom":[[[247144.7859086889,6754013.490053757],[247129.07421756012,6753966.770126681],[247112.46836514754,6753965.748228071],[247116.02666645497,6753980.542859508],[247126.00852173025,6754018.59954681],[247144.7859086889,6754013.490053757]]]},{"id":"COTEAU NORD_121","group":"COTEAU NORD","area_ha":0.16778309586141257,"bbox":[247129.07421756012,6753956.551140582,247176.46476559917,6754013.490053757],"geom":[[[247157.9428532931,6754010.456292261],[247170.46111126523,6754006.240960492],[247176.46476559917,6754003.303001991],[247168.1618393929,6753977.244587434],[247165.6070928679,6753966.5146520315],[247165.73483019398,6753963.70443085],[247162.54139703786,6753956.551140582],[247147.08518056123,6753962.171582935],[247134.694659915,6753965.74822807],[247129.07421756012,6753966.770126681],[247144.7859086889,6754013.490053757],[247157.9428532931,6754010.456292261]]]},{"id":"COTEAU NORD_122","group":"COTEAU NORD","area_ha":0.0846008771990193,"bbox":[247126.3669877982,6754102.101753438,247158.91002224572,6754138.053165506],"geom":[[[247127.51811666426,6754138.053165506],[247158.91002224572,6754134.96380337],[247158.59031477483,6754134.084607826],[247147.0476304845,6754102.101753438],[247126.3669877982,6754108.354040761],[247127.51811666426,6754138.053165506]]]},{"id":"COTEAU NORD_123","group":"COTEAU NORD","area_ha":0.11905792787969112,"bbox":[247165.04084184673,6754123.076113718,247211.734757027,6754161.9794281935],"geom":[[[247198.63910115988,6754123.076113718],[247165.04084184673,6754134.533971016],[247172.05677978013,6754153.322414977],[247177.82812192512,6754160.0556474775],[247183.11851889122,6754161.9794281935],[247192.4969498769,6754161.738955603],[247211.734757027,6754157.169976403],[247198.63910115988,6754123.076113718]]]},{"id":"COTEAU NORD_124","group":"COTEAU NORD","area_ha":0.1253469019570388,"bbox":[247292.3568604089,6754077.305255062,247337.2614486821,6754127.110902732],"geom":[[[247324.6723357594,6754077.305255062],[247292.3568604089,6754093.410016547],[247305.0381217057,6754127.110902732],[247328.3639628751,6754108.834985939],[247337.2614486821,6754098.735137186],[247336.29955832468,6754092.001904682],[247331.73057912634,6754084.066309234],[247324.6723357594,6754077.305255062]]]},{"id":"QG_125","group":"QG","area_ha":0.0575355094693834,"bbox":[247109.78588129615,6753918.652575839,247145.58252129657,6753940.104959828],"geom":[[[247131.4373580956,6753938.572111913],[247140.4428395966,6753936.783789349],[247144.46656537335,6753933.015538221],[247145.58252129657,6753929.055306347],[247141.23945218493,6753918.836320202],[247141.06984200503,6753918.652575839],[247123.32603787875,6753921.263704205],[247111.3187292114,6753923.4352387525],[247112.65997113677,6753933.015538219],[247109.78588129615,6753933.46261886],[247111.44646653754,6753940.104959828],[247131.4373580956,6753938.572111913]]]},{"id":"NORD_126","group":"NORD","area_ha":0.10006589264906943,"bbox":[247524.67671695905,6754089.749237534,247582.41398842447,6754119.639771875],"geom":[[[247524.67671695905,6754107.121513903],[247545.62563846417,6754089.749237534],[247561.97601622407,6754092.8149333615],[247577.81544467952,6754100.990122245],[247582.41398842447,6754119.639771875],[247543.83731589635,6754112.9974309085],[247524.67671695905,6754107.121513903]]]},{"id":"NORD_127","group":"NORD","area_ha":0.0964302975140512,"bbox":[247503.60005812754,6754107.121513903,247556.52542258892,6754138.672633489],"geom":[[[247550.09644488292,6754138.672633489],[247556.52542258892,6754115.182138024],[247543.83731589635,6754112.9974309085],[247524.67671695905,6754107.121513903],[247503.60005812754,6754126.537587494],[247550.09644488292,6754138.672633489]]]},{"id":"NORD_128","group":"NORD","area_ha":0.08494585025012494,"bbox":[247550.09644488292,6754115.182138024,247590.5891773044,6754147.614246324],"geom":[[[247582.41398842447,6754119.639771875],[247590.5891773044,6754147.614246324],[247550.09644488292,6754138.672633489],[247556.52542258892,6754115.182138024],[247582.41398842447,6754119.639771875]]]},{"id":"NORD_129","group":"NORD","area_ha":0.09922616283632815,"bbox":[247543.45410391805,6754138.672633489,247593.78261046088,6754168.786708152],"geom":[[[247593.78261046088,6754168.786708152],[247590.5891773044,6754147.614246324],[247550.09644488292,6754138.672633489],[247543.45410391805,6754160.483781946],[247593.78261046088,6754168.786708152]]]},{"id":"NORD_130","group":"NORD","area_ha":0.13467808251008392,"bbox":[247485.5890951263,6754126.537587494,247550.09644488292,6754160.483781946],"geom":[[[247543.45410391805,6754160.483781946],[247499.51246368757,6754152.947279694],[247494.01975865866,6754154.735602262],[247485.5890951263,6754151.797643758],[247503.60005812754,6754126.537587494],[247550.09644488292,6754138.672633489],[247543.45410391805,6754160.483781946]]]},{"id":"NORD_131","group":"NORD","area_ha":0.12267615442983806,"bbox":[247550.4796568617,6754162.984645344,247595.6986703545,6754198.645308163],"geom":[[[247550.4796568617,6754192.769391154],[247594.29355976585,6754198.645308163],[247595.6986703545,6754182.805879707],[247593.78261046088,6754168.786708152],[247558.61318360188,6754162.984645344],[247550.4796568617,6754192.769391154]]]},{"id":"NORD_132","group":"NORD","area_ha":0.13312995855268092,"bbox":[247541.02709471912,6754192.769391154,247594.29355976585,6754227.130731913],"geom":[[[247541.02709471912,6754221.638026887],[247567.08550927415,6754226.619782608],[247572.70595162915,6754227.130731913],[247580.8811405092,6754225.214672019],[247589.05632938945,6754216.528533837],[247593.27166115557,6754204.13801319],[247594.29355976585,6754198.645308163],[247550.4796568617,6754192.769391154],[247541.02709471912,6754221.638026887]]]},{"id":"NORD_133","group":"NORD","area_ha":0.09796977027803659,"bbox":[247525.18766626396,6754160.483781946,247558.61318360188,6754221.638026887],"geom":[[[247525.18766626396,6754218.316856404],[247541.02709471912,6754221.638026887],[247550.4796568617,6754192.769391154],[247558.61318360188,6754162.984645344],[247543.45410391805,6754160.483781946],[247525.18766626396,6754218.316856404]]]},{"id":"NORD_134","group":"NORD","area_ha":0.13856077819038182,"bbox":[247456.20951008837,6754151.797643758,247496.56984434125,6754209.758455545],"geom":[[[247477.7971182249,6754158.152575738],[247467.4503947986,6754167.094188578],[247459.2752059186,6754179.101497245],[247456.20951008837,6754191.875229869],[247458.7642566135,6754201.711003992],[247466.04528420977,6754206.18181041],[247482.2679246437,6754209.758455545],[247488.52705362998,6754182.67814238],[247496.56984434125,6754153.905341809],[247494.01975865866,6754154.735602262],[247485.5890951263,6754151.797643758],[247477.7971182249,6754158.152575738]]]},{"id":"NORD_135","group":"NORD","area_ha":0.14401753200963138,"bbox":[247482.2679246437,6754152.947279694,247521.03676751396,6754214.350607506],"geom":[[[247505.29722403485,6754214.350607506],[247521.03676751396,6754156.638948083],[247499.51246368757,6754152.947279694],[247496.56984434125,6754153.905341809],[247488.52705362998,6754182.67814238],[247482.2679246437,6754209.758455545],[247505.29722403485,6754214.350607506]]]},{"id":"NORD_136","group":"NORD","area_ha":0.12903842732310294,"bbox":[247505.29722403485,6754156.638948083,247543.45410391805,6754218.316856404],"geom":[[[247521.03676751396,6754156.638948083],[247505.29722403485,6754214.350607506],[247525.18766626396,6754218.316856404],[247543.45410391805,6754160.483781946],[247521.03676751396,6754156.638948083]]]}]};
+/* Carte : personnalisation (GeoJSON) */
+var GEO_DEFAULT = GEO;
+var GEO_RASTER_DEFAULT = JSON.parse(JSON.stringify(GEO.raster));
+var RASTER_META_KEY = "paturage.raster.meta.v1";
+
+var MAP_KEY = "paturage.map.v1";
+
+function loadCustomMap(){
+  try{
+    var raw = localStorage.getItem(MAP_KEY);
+    if(!raw) return null;
+    return JSON.parse(raw);
+  }catch(e){ return null; }
+}
+function applyCustomMapIfAny(){
+  var m = loadCustomMap();
+  if(m && m.parcels && m.paddocks){
+    GEO = { raster: GEO_DEFAULT.raster, parcels: m.parcels, paddocks: m.paddocks };
+  }
+}
+function setMapImportMsg(msg){
+  var el=document.getElementById("mapImportMsg");
+  if(el) el.textContent = msg || "—";
+}
+
+function readFileText(file){
+  return new Promise(function(resolve, reject){
+    var r=new FileReader();
+    r.onload=function(){ resolve(r.result); };
+    r.onerror=function(){ reject(r.error || new Error("Erreur lecture fichier")); };
+    r.readAsText(file);
+  });
+}
+function firstPoint(coords){
+  if(!coords) return null;
+  if(typeof coords[0] === "number") return coords;
+  return firstPoint(coords[0]);
+}
+function isLonLat(pt){
+  if(!pt || pt.length<2) return false;
+  return (Math.abs(pt[0])<=180 && Math.abs(pt[1])<=90);
+}
+function mapCoords(coords, fn){
+  if(typeof coords[0] === "number") return fn(coords);
+  var out=[];
+  for(var i=0;i<coords.length;i++) out.push(mapCoords(coords[i], fn));
+  return out;
+}
+
+/* Projection Lambert-93 (EPSG:2154) — forward */
+function lonLatToLambert93(lonDeg, latDeg){
+  var lon = lonDeg * Math.PI/180;
+  var lat = latDeg * Math.PI/180;
+
+  var a = 6378137.0;
+  var f = 1/298.257222101;
+  var e = Math.sqrt(2*f - f*f);
+
+  var phi1 = 44.0 * Math.PI/180;
+  var phi2 = 49.0 * Math.PI/180;
+  var phi0 = 46.5 * Math.PI/180;
+  var lam0 = 3.0 * Math.PI/180;
+
+  var X0 = 700000.0;
+  var Y0 = 6600000.0;
+
+  function m(phi){
+    return Math.cos(phi) / Math.sqrt(1 - (e*e)*Math.sin(phi)*Math.sin(phi));
+  }
+  function t(phi){
+    var sp = Math.sin(phi);
+    var part = (1 - e*sp) / (1 + e*sp);
+    return Math.tan(Math.PI/4 - phi/2) / Math.pow(part, e/2);
+  }
+
+  var m1=m(phi1), m2=m(phi2);
+  var t1=t(phi1), t2=t(phi2), t0=t(phi0);
+  var n = Math.log(m1/m2) / Math.log(t1/t2);
+  var F = m1 / (n * Math.pow(t1, n));
+  var rho0 = a * F * Math.pow(t0, n);
+
+  var tt = t(lat);
+  var rho = a * F * Math.pow(tt, n);
+  var theta = n * (lon - lam0);
+
+  var x = X0 + rho * Math.sin(theta);
+  var y = Y0 + rho0 - rho * Math.cos(theta);
+  return [x,y];
+}
+
+function ensureMultiPolygon(geomType, coords){
+  if(geomType==="Polygon") return [coords];
+  if(geomType==="MultiPolygon") return coords;
+  return [];
+}
+function bboxFromMP(mp){
+  var minx=Infinity, miny=Infinity, maxx=-Infinity, maxy=-Infinity;
+  for(var p=0;p<mp.length;p++){
+    var rings=mp[p];
+    for(var r=0;r<rings.length;r++){
+      var ring=rings[r];
+      for(var i=0;i<ring.length;i++){
+        var pt=ring[i];
+        if(pt[0]<minx) minx=pt[0];
+        if(pt[1]<miny) miny=pt[1];
+        if(pt[0]>maxx) maxx=pt[0];
+        if(pt[1]>maxy) maxy=pt[1];
+      }
+    }
+  }
+  if(!isFinite(minx)) return [0,0,0,0];
+  return [minx,miny,maxx,maxy];
+}
+function getProp(props, keys){
+  if(!props) return "";
+  for(var i=0;i<keys.length;i++){
+    var k=keys[i];
+    if(props[k]!==undefined && props[k]!==null) return props[k];
+    var lk=k.toLowerCase();
+    for(var kk in props){
+      if(String(kk).toLowerCase()===lk) return props[kk];
+    }
+  }
+  return "";
+}
+function normLabel(s){
+  s = String(s||"").trim().replace(/\s+/g," ");
+  return s.toUpperCase();
+}
+function geojsonToParcels(gj){
+  var out=[];
+  if(!gj || !gj.features) return out;
+  for(var i=0;i<gj.features.length;i++){
+    var f=gj.features[i];
+    if(!f || !f.geometry) continue;
+    var props=f.properties||{};
+    var name = getProp(props, ["Parcelle","Parcelles","PARCELLE","NAME","name","Nom","NOM"]) || ("Parcelle_"+(i+1));
+    name = normLabel(name);
+    var type=f.geometry.type;
+    var coords=f.geometry.coordinates;
+    if(!(type==="Polygon"||type==="MultiPolygon")) continue;
+
+    var fp=firstPoint(coords);
+    var ll=isLonLat(fp);
+
+    var mp=ensureMultiPolygon(type, coords);
+    if(ll){
+      mp = mapCoords(mp, function(pt){ return lonLatToLambert93(pt[0], pt[1]); });
+    }
+    var bbox=bboxFromMP(mp);
+    out.push({name:name, bbox:bbox, geom:mp});
+  }
+  return out;
+}
+function geojsonToPaddocks(gj){
+  var out=[];
+  if(!gj || !gj.features) return out;
+  for(var i=0;i<gj.features.length;i++){
+    var f=gj.features[i];
+    if(!f || !f.geometry) continue;
+    var props=f.properties||{};
+    var pid = getProp(props, ["Paddock","PADDOCK","ID","id","Identifiant","identifiant"]) || ("Paddock_"+(i+1));
+    var grp = getProp(props, ["Parcelle","PARCELLE","Groupe","group","GROUPE"]) || "";
+    var surf = getProp(props, ["Surface","SURFACE","area","AREA","area_ha","AREA_HA"]) || 0;
+
+    pid = String(pid).trim();
+    grp = normLabel(grp);
+
+    var area = toNum(surf);
+    if(area>50) area = area/10000; // si surface en m²
+    if(area<0) area=0;
+
+    var type=f.geometry.type;
+    var coords=f.geometry.coordinates;
+    if(!(type==="Polygon"||type==="MultiPolygon")) continue;
+
+    var fp=firstPoint(coords);
+    var ll=isLonLat(fp);
+
+    var mp=ensureMultiPolygon(type, coords);
+    if(ll){
+      mp = mapCoords(mp, function(pt){ return lonLatToLambert93(pt[0], pt[1]); });
+    }
+    var bbox=bboxFromMP(mp);
+    out.push({id:pid, group:grp, area_ha:area, bbox:bbox, geom:mp});
+  }
+  return out;
+}
+function importMapFiles(){
+  var fp = document.getElementById("fileParcels") ? document.getElementById("fileParcels").files[0] : null;
+  var fd = document.getElementById("filePaddocks") ? document.getElementById("filePaddocks").files[0] : null;
+  if(!fp && !fd){ setMapImportMsg("Choisissez au moins un fichier GeoJSON."); return; }
+
+  setMapImportMsg("Import en cours…");
+  Promise.all([
+    fp ? readFileText(fp) : Promise.resolve(null),
+    fd ? readFileText(fd) : Promise.resolve(null)
+  ]).then(function(res){
+    var parcels = GEO.parcels;
+    var paddocks = GEO.paddocks;
+
+    if(res[0]){
+      parcels = geojsonToParcels(JSON.parse(res[0]));
+      if(!parcels.length) throw new Error("GeoJSON parcelles vide ou invalide.");
+    }
+    if(res[1]){
+      paddocks = geojsonToPaddocks(JSON.parse(res[1]));
+      if(!paddocks.length) throw new Error("GeoJSON paddocks vide ou invalide.");
+    }
+
+    GEO = { raster: GEO_DEFAULT.raster, parcels: parcels, paddocks: paddocks };
+    localStorage.setItem(MAP_KEY, JSON.stringify({parcels:parcels, paddocks:paddocks}));
+
+    buildPadMeta();
+    if(MAP){ MAP.selParcel=""; MAP.selPaddock=""; }
+    setMapImportMsg("Import OK. Parcelles: " + parcels.length + " • Paddocks: " + paddocks.length);
+
+    renderAll();
+    initMap(); fitMap(); syncMapUI(); drawMap();
+  }).catch(function(err){
+    setMapImportMsg("Erreur : " + (err && err.message ? err.message : String(err)));
+  });
+}
+function resetMapToDefault(){
+  localStorage.removeItem(MAP_KEY);
+  GEO = GEO_DEFAULT;
+  buildPadMeta();
+  if(MAP){ MAP.selParcel=""; MAP.selPaddock=""; }
+  setMapImportMsg("Carte intégrée rétablie.");
+  renderAll();
+  initMap(); fitMap(); syncMapUI(); drawMap();
+}
+
+
+
+/* Fond raster personnalisable (image + world file) */
+var _rasterObjectUrl = null;
+
+function idbOpenAssets(){
+  return new Promise(function(resolve, reject){
+    try{
+      var req = indexedDB.open("paturage_assets_v1", 1);
+      req.onupgradeneeded = function(){
+        var db=req.result;
+        if(!db.objectStoreNames.contains("assets")) db.createObjectStore("assets");
+      };
+      req.onsuccess = function(){ resolve(req.result); };
+      req.onerror = function(){ reject(req.error); };
+    }catch(e){ reject(e); }
+  });
+}
+function idbPutAsset(key, value){
+  return idbOpenAssets().then(function(db){
+    return new Promise(function(resolve, reject){
+      var tx=db.transaction("assets","readwrite");
+      tx.objectStore("assets").put(value, key);
+      tx.oncomplete=function(){ resolve(true); };
+      tx.onerror=function(){ reject(tx.error); };
+    });
+  });
+}
+function idbGetAsset(key){
+  return idbOpenAssets().then(function(db){
+    return new Promise(function(resolve, reject){
+      var tx=db.transaction("assets","readonly");
+      var req=tx.objectStore("assets").get(key);
+      req.onsuccess=function(){ resolve(req.result); };
+      req.onerror=function(){ reject(req.error); };
+    });
+  });
+}
+function idbDelAsset(key){
+  return idbOpenAssets().then(function(db){
+    return new Promise(function(resolve, reject){
+      var tx=db.transaction("assets","readwrite");
+      tx.objectStore("assets").delete(key);
+      tx.oncomplete=function(){ resolve(true); };
+      tx.onerror=function(){ reject(tx.error); };
+    });
+  });
+}
+
+function parseWorldFile(text){
+  var lines = String(text||"").trim().split(/\r?\n/).map(function(s){ return String(s||"").trim(); }).filter(Boolean);
+  if(lines.length < 6) throw new Error("World file incomplet (6 lignes attendues).");
+  var A = Number(lines[0]);
+  var D = Number(lines[1]);
+  var B = Number(lines[2]);
+  var E = Number(lines[3]);
+  var C = Number(lines[4]);
+  var F = Number(lines[5]);
+  if(!isFinite(A)||!isFinite(B)||!isFinite(D)||!isFinite(E)||!isFinite(C)||!isFinite(F)) throw new Error("World file non numérique.");
+  return {A:A,B:B,D:D,E:E,C:C,F:F};
+}
+function bboxFromWorld(w, imgW, imgH){
+  // Hypothèse standard sans rotation (B=D=0). Si rotation, on avertit mais on calcule quand même en approximation.
+  var left = w.C - w.A/2;
+  var top  = w.F - w.E/2;
+  var right = left + w.A * imgW;
+  var bottom = top + w.E * imgH;
+  // Normalisation (top > bottom)
+  var t = Math.max(top, bottom);
+  var b = Math.min(top, bottom);
+  return {left:left, right:right, top:t, bottom:b};
+}
+
+function setRasterMsg(msg){
+  var el=document.getElementById("rasterImportMsg");
+  if(el) el.textContent = msg || "—";
+}
+
+function applyRasterObjectUrl(url, meta){
+  try{
+    if(!meta) return;
+    if(_rasterObjectUrl) try{ URL.revokeObjectURL(_rasterObjectUrl); }catch(_){}
+    _rasterObjectUrl = url;
+
+    // Mise à jour raster partagé (GEO_DEFAULT.raster est la référence centrale)
+    GEO_DEFAULT.raster.img = url || GEO_RASTER_DEFAULT.img;
+    GEO_DEFAULT.raster.width = meta.width || GEO_RASTER_DEFAULT.width;
+    GEO_DEFAULT.raster.height = meta.height || GEO_RASTER_DEFAULT.height;
+    GEO_DEFAULT.raster.left = meta.left;
+    GEO_DEFAULT.raster.right = meta.right;
+    GEO_DEFAULT.raster.top = meta.top;
+    GEO_DEFAULT.raster.bottom = meta.bottom;
+
+    // Si GEO courant n'est pas GEO_DEFAULT (carte importée), il pointe sur GEO_DEFAULT.raster
+    if(GEO && GEO.raster){
+      GEO.raster.img = GEO_DEFAULT.raster.img;
+      GEO.raster.width = GEO_DEFAULT.raster.width;
+      GEO.raster.height = GEO_DEFAULT.raster.height;
+      GEO.raster.left = GEO_DEFAULT.raster.left;
+      GEO.raster.right = GEO_DEFAULT.raster.right;
+      GEO.raster.top = GEO_DEFAULT.raster.top;
+      GEO.raster.bottom = GEO_DEFAULT.raster.bottom;
+    }
+
+    // Recharge image si la carte est déjà initialisée
+    if(MAP && MAP.img){
+      MAP.ready=false;
+      var im = new Image();
+      im.onload=function(){
+        MAP.img = im;
+        MAP.ready=true;
+        try{ fitMap(); }catch(_){}
+        try{ drawMap(); }catch(_){}
+      };
+      im.onerror=function(){ console.warn("Erreur chargement fond raster importé."); };
+      im.src = GEO.raster.img;
+    }
+  }catch(e){
+    console.warn("applyRasterObjectUrl error", e);
+  }
+}
+
+function applyRasterFromStorage(){
+  try{
+    var raw = localStorage.getItem(RASTER_META_KEY);
+    if(!raw){
+      // Revenir au raster intégré
+      if(_rasterObjectUrl) try{ URL.revokeObjectURL(_rasterObjectUrl); }catch(_){}
+      _rasterObjectUrl=null;
+      GEO_DEFAULT.raster = JSON.parse(JSON.stringify(GEO_RASTER_DEFAULT));
+      if(GEO && GEO.raster){
+        GEO.raster.img = GEO_DEFAULT.raster.img;
+        GEO.raster.width = GEO_DEFAULT.raster.width;
+        GEO.raster.height = GEO_DEFAULT.raster.height;
+        GEO.raster.left = GEO_DEFAULT.raster.left;
+        GEO.raster.right = GEO_DEFAULT.raster.right;
+        GEO.raster.top = GEO_DEFAULT.raster.top;
+        GEO.raster.bottom = GEO_DEFAULT.raster.bottom;
+      }
+      setRasterMsg("Fond intégré actif.");
+      return Promise.resolve(false);
+    }
+    var meta = JSON.parse(raw);
+    return idbGetAsset("rasterBlob").then(function(blob){
+      if(!blob) throw new Error("Image raster introuvable (IndexedDB).");
+      var url = URL.createObjectURL(blob);
+      applyRasterObjectUrl(url, meta);
+      setRasterMsg("Fond importé actif.");
+      return true;
+    }).catch(function(e){
+      console.warn(e);
+      setRasterMsg("Impossible de charger le fond importé (réessayez l'import).");
+      return false;
+    });
+  }catch(e){
+    console.warn(e);
+    return Promise.resolve(false);
+  }
+}
+
+function importRaster(){
+  var fImg = document.getElementById("fileRaster") && document.getElementById("fileRaster").files ? document.getElementById("fileRaster").files[0] : null;
+  var fWld = document.getElementById("fileWorld") && document.getElementById("fileWorld").files ? document.getElementById("fileWorld").files[0] : null;
+  if(!fImg || !fWld){ setRasterMsg("Choisissez une image + un world file."); return; }
+
+  setRasterMsg("Import en cours…");
+  Promise.all([ readFileText(fWld), new Promise(function(resolve,reject){
+    var url = URL.createObjectURL(fImg);
+    var im = new Image();
+    im.onload=function(){ resolve({img:im, url:url}); };
+    im.onerror=function(){ try{ URL.revokeObjectURL(url); }catch(_){} reject(new Error("Image invalide.")); };
+    im.src=url;
+  })]).then(function(res){
+    var wText=res[0];
+    var imObj=res[1];
+    var w = parseWorldFile(wText);
+
+    if(Math.abs(w.B) > 1e-9 || Math.abs(w.D) > 1e-9){
+      console.warn("World file avec rotation (B/D non nuls) : rotation non gérée (alignement potentiellement approximatif).");
+    }
+
+    var bb = bboxFromWorld(w, imObj.img.width, imObj.img.height);
+    var meta = { width: imObj.img.width, height: imObj.img.height, left:bb.left, right:bb.right, top:bb.top, bottom:bb.bottom };
+
+    // Stocker l'image et les métadonnées
+    return idbPutAsset("rasterBlob", fImg).then(function(){
+      localStorage.setItem(RASTER_META_KEY, JSON.stringify(meta));
+      try{ URL.revokeObjectURL(imObj.url); }catch(_){}
+      return applyRasterFromStorage();
+    }).then(function(){
+      setRasterMsg("Import OK. Fond appliqué.");
+    });
+  }).catch(function(err){
+    setRasterMsg("Erreur import fond : " + (err && err.message ? err.message : String(err)));
+  });
+}
+
+function resetRaster(){
+  setRasterMsg("Réinitialisation…");
+  Promise.resolve().then(function(){
+    localStorage.removeItem(RASTER_META_KEY);
+    return idbDelAsset("rasterBlob");
+  }).catch(function(){ /* ignore */ }).then(function(){
+    return applyRasterFromStorage();
+  }).then(function(){
+    setRasterMsg("Fond intégré rétabli.");
+  });
+}
+
+window.addEventListener("beforeunload", function(){
+  if(_rasterObjectUrl) try{ URL.revokeObjectURL(_rasterObjectUrl); }catch(_){}
+});
+
+
+
+
+/* Stockage */
+var STORE_KEY = "paturage.simple.v1";
+
+
+/* Sync Google Sheet (Apps Script Web App) */
+var SHEET_PUSH_URL = "https://script.google.com/macros/s/AKfycbyl1B1S-2UzpHehy21nJr3ktVcz-BiUzKubzFqKQQfQY6wYibpewoPBu2xtmmGenjem9w/exec";
+var SHEET_SECRET_KEY = "paturage.sheet.secret.v1";
+var SHEET_QUEUE_KEY  = "paturage.sheet.pending.v1";
+
+function getSheetSecret(){
+  try{ return String(localStorage.getItem(SHEET_SECRET_KEY) || "").trim(); }catch(_){ return ""; }
+}
+function setSheetSecret(v){
+  try{ localStorage.setItem(SHEET_SECRET_KEY, String(v||"").trim()); }catch(_){}
+}
+function getDeviceId(){
+  try{
+    var id = localStorage.getItem("paturage.deviceId.v1");
+    if(!id){
+      id = "dev_" + Math.random().toString(16).slice(2) + "_" + Date.now();
+      localStorage.setItem("paturage.deviceId.v1", id);
+    }
+    return id;
+  }catch(_){
+    return "dev_unknown";
+  }
+}
+function readSheetQueue(){
+  try{
+    var raw = localStorage.getItem(SHEET_QUEUE_KEY);
+    if(!raw) return [];
+    var arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  }catch(_){ return []; }
+}
+function writeSheetQueue(arr){
+  try{ localStorage.setItem(SHEET_QUEUE_KEY, JSON.stringify(arr||[])); }catch(_){}
+}
+function queueMovesToSheet(moves){
+  if(!moves || !moves.length) return;
+  var sec = getSheetSecret();
+  if(!sec){
+    // Pas configuré → ne pas accumuler une file infinie
+    return;
+  }
+  var q = readSheetQueue();
+  for(var i=0;i<moves.length;i++){
+    var m=moves[i];
+    if(!m || !m.id) continue;
+    if(q.some(function(x){ return x && x.id===m.id; })) continue;
+    q.push({id:m.id, dt:m.dt, type:m.type, lotId:m.lotId, paddockId:m.paddockId, auto:!!m.auto});
+  }
+  writeSheetQueue(q);
+  renderSheetSyncStatus();
+}
+
+function _setSheetLast(status, info){
+  try{
+    localStorage.setItem("paturage.sheet.last.v1", JSON.stringify({ts:Date.now(), status:String(status||""), info:String(info||"")}));
+  }catch(_){}
+  renderSheetSyncStatus();
+}
+
+function pushMoveToSheet(move){
+  try{
+    var sec = getSheetSecret();
+    if(!sec){ _setSheetLast("disabled","secret manquant"); return false; }
+    if(!move || !move.id){ _setSheetLast("error","move invalide"); return false; }
+
+    var body = new URLSearchParams({
+      secret: sec,
+      moveId: move.id,
+      dt: move.dt || "",
+      type: move.type || "",
+      lotId: move.lotId || "",
+      paddockId: move.paddockId || "",
+      auto: move.auto ? "1" : "",
+      deviceId: getDeviceId()
+    }).toString();
+
+    // 1) Tentative sendBeacon (non bloquant)
+    if(navigator && navigator.sendBeacon){
+      var ok = navigator.sendBeacon(SHEET_PUSH_URL, new Blob([body], {type:"application/x-www-form-urlencoded"}));
+      if(ok){ _setSheetLast("sent","sendBeacon"); return true; }
+      // si sendBeacon renvoie false, on tente fetch
+    }
+
+    // 2) Fallback fetch no-cors (déclenche l'envoi ; pas de réponse lisible)
+    fetch(SHEET_PUSH_URL, {
+      method:"POST",
+      mode:"no-cors",
+      headers:{ "Content-Type":"application/x-www-form-urlencoded" },
+      body: body
+    }).then(function(){
+      _setSheetLast("sent","fetch(no-cors)");
+    }).catch(function(err){
+      _setSheetLast("error","fetch failed");
+    });
+
+    return true;
+  }catch(e){
+    console.warn("pushMoveToSheet failed", e);
+    _setSheetLast("error", e && e.message ? e.message : "exception");
+    return false;
+  }
+}
+
+var _sheetFlushTimer = null;
+function flushMovesToSheet(){
+  try{
+    var q = readSheetQueue();
+    if(!q.length){ renderSheetSyncStatus(); return; }
+
+    var keep=[];
+    for(var i=0;i<q.length;i++){
+      var ok = pushMoveToSheet(q[i]);
+      if(!ok) keep.push(q[i]);
+    }
+    writeSheetQueue(keep);
+    renderSheetSyncStatus();
+  }catch(e){
+    console.warn("flushMovesToSheet failed", e);
+  }
+}
+function flushMovesToSheetSoon(){
+  if(_sheetFlushTimer) return;
+  _sheetFlushTimer = setTimeout(function(){
+    _sheetFlushTimer=null;
+    flushMovesToSheet();
+  }, 250);
+}
+
+function renderSheetSyncStatus(){
+  try{
+    var el=document.getElementById("sheetSyncMsg");
+    if(!el) return;
+    var sec = getSheetSecret();
+    var q = readSheetQueue();
+
+    // refléter la valeur persistée dans le champ (utile après rafraîchissement)
+    var inp=document.getElementById("sheetSecret");
+    if(inp && sec && (!inp.value || String(inp.value).trim()==="")) inp.value = sec;
+
+    var last=null;
+    try{ last = JSON.parse(localStorage.getItem("paturage.sheet.last.v1")||"null"); }catch(_){}
+
+    if(!sec){
+      el.textContent = "Synchro désactivée (secret non renseigné).";
+      return;
+    }
+
+    var line = "Secret configuré • En attente : " + q.length + " mouvement(s).";
+    if(last && last.ts){
+      var dt=new Date(last.ts);
+      line += " • Dernier envoi : " + (last.status||"?") + " (" + (last.info||"") + ") à " + dt.toLocaleTimeString();
+    }
+    el.textContent = line;
+  }catch(_){} 
+}
+
+function saveSheetSecretFromUI(){
+  var inp=document.getElementById("sheetSecret");
+  var v = inp ? String(inp.value||"").trim() : "";
+  setSheetSecret(v);
+
+  // Vérification (utile si stockage désactivé / privé)
+  var back = getSheetSecret();
+  if(inp) inp.value = back || v;
+
+  renderSheetSyncStatus();
+  if(v && back===v){
+    showToast("✅ Secret enregistré");
+    flushMovesToSheetSoon();
+  }else if(v && back!==v){
+    showToast("⚠️ Impossible d'enregistrer (stockage navigateur bloqué ?)");
+  }else{
+    showToast("ℹ️ Synchro désactivée");
+  }
+}
+
+function testSheetSync(){
+  try{
+    var sec=getSheetSecret();
+    if(!sec){ showToast("⚠️ Renseignez le secret."); return; }
+    var dummy = { id:"test_" + Date.now(), dt: nowISO(), type:"IN", lotId:"test", paddockId:"test", auto:false };
+    var ok = pushMoveToSheet(dummy);
+    showToast(ok ? "📡 Test envoyé" : "⚠️ Test en file d'attente");
+  }catch(e){
+    console.warn(e);
+    showToast("⚠️ Test impossible");
+  }
+}
+
+
+window.addEventListener("online", function(){ flushMovesToSheetSoon(); });
+
+
+/* Utilitaires */
+function uuid(){ return "id_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16); }
+function nowISO(){ var d=new Date(); var m=("0"+(d.getMonth()+1)).slice(-2); var day=("0"+d.getDate()).slice(-2); return d.getFullYear()+"-"+m+"-"+day; }
+function esc(s){ s = (s===null || s===undefined) ? "" : String(s); return s.replace(/[&<>"']/g, function(ch){ return { "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[ch]; }); }
+function toNum(x){ var n = Number(String(x).replace(",", ".")); return isFinite(n)?n:0; }
+function fmt(n, d){ var x = Number(n); if(!isFinite(x)) return ""; return x.toFixed(d||2).replace(".", ","); }
+function setText(id, txt){ var el=document.getElementById(id); if(el) el.textContent = txt; }
+
+function typeLabel(t){ return (t==="IN") ? "Entrée" : (t==="OUT") ? "Sortie" : String(t||""); }
+function bind(id, evt, fn){
+  var el=document.getElementById(id);
+  if(!el){ console.warn("[bind] élément manquant:", id); return null; }
+  el.addEventListener(evt, fn);
+  return el;
+}
+
+
+function showToast(msg){
+  var t=document.getElementById("toast");
+  if(!t) return;
+  t.textContent = msg || "";
+  t.classList.add("show");
+  if(t._to) clearTimeout(t._to);
+  t._to = setTimeout(function(){ t.classList.remove("show"); }, 1600);
+}
+function setHTML(id, html){ var el=document.getElementById(id); if(el) el.innerHTML = html; }
+function on(id, evt, fn){ return bind(id, evt, fn); }
+function byId(arr, id){ for(var i=0;i<arr.length;i++) if(arr[i].id===id) return arr[i]; return null; }
+
+/* Référentiels paddocks */
+var PAD_META = [];
+var PARCELS = [];
+function titleCase(s){
+  s = String(s||"").toLowerCase();
+  return s.replace(/(^|\s|\-)([a-zàâçéèêëîïôûùüÿñæœ])/g, function(m, p1, p2){ return p1 + p2.toUpperCase(); });
+}
+function buildPadMeta(){
+  PAD_META = []; PARCELS = [];
+  var parcelSet = {};
+  for(var i=0;i<GEO.paddocks.length;i++){
+    var p = GEO.paddocks[i];
+    var pid = p.id;
+    var grp = p.group;
+    var code = "";
+    var name = pid;
+    if(pid.indexOf("_")>=0){
+      var parts = pid.split("_");
+      code = parts.slice(1).join("_");
+      name = titleCase(grp) + " - " + code.replace(/-/g," ").trim();
+    }
+    PAD_META.push({id:pid, group:grp, code:code, name:name, area_ha:p.area_ha});
+    parcelSet[grp]=true;
+  }
+  for(var k in parcelSet) PARCELS.push(k);
+  PARCELS.sort();
+}
+function getPaddockMeta(id){ for(var i=0;i<PAD_META.length;i++) if(PAD_META[i].id===id) return PAD_META[i]; return null; }
+
+/* Données métier */
+function defaultData(){
+  return {
+    meta:{createdAt:new Date().toISOString(), lastBackupAt:"", lastBackupMovesLen:0, lastBackupName:""},
+    categories:[
+      {id:"adulte", name:"Adulte", ugb:0.7, desc:""},
+      {id:"jument_suitee", name:"Jument suitée", ugb:1.2, desc:""},
+      {id:"demi_trait", name:"Demi-trait", ugb:0.8, desc:""},
+      {id:"trait", name:"Trait", ugb:1.0, desc:""},
+      {id:"jeune", name:"Jeune", ugb:0.9, desc:""}
+    ],
+    lots:[],
+    compositions:[],
+    movements:[],
+    ui:{ lastSelectedPaddockId:"", lastSelectedParcel:"", mapRefDate:"", restTarget:60 }
+  };
+}
+function normalizeData(d){
+  d = d || defaultData();
+  if(!d.meta) d.meta={};
+  if(!d.meta.createdAt) d.meta.createdAt = (new Date()).toISOString();
+  if(d.meta.lastBackupAt===undefined) d.meta.lastBackupAt = "";
+  if(d.meta.lastBackupMovesLen===undefined) d.meta.lastBackupMovesLen = 0;
+  if(d.meta.lastBackupName===undefined) d.meta.lastBackupName = "";
+
+  if(!d.categories) d.categories=[];
+  if(!d.lots) d.lots=[];
+  if(!d.compositions) d.compositions=[];
+  if(!d.movements) d.movements=[];
+  if(!d.ui) d.ui={};
+
+  if(d.ui.mapRefDate===undefined) d.ui.mapRefDate="";
+  if(d.ui.restTarget===undefined) d.ui.restTarget=60;
+  if(d.ui.mapLayer===undefined) d.ui.mapLayer="rest";
+  if(d.ui.pressureMax===undefined) d.ui.pressureMax=2;
+  if(d.ui.autoTransfer===undefined) d.ui.autoTransfer=true;
+
+  return d;
+}
+function loadData(){
+  try{
+    var raw = localStorage.getItem(STORE_KEY);
+    if(!raw) return defaultData();
+    return normalizeData(JSON.parse(raw));
+  }catch(e){
+    return defaultData();
+  }
+}
+function saveData(opts){
+  try{
+    localStorage.setItem(STORE_KEY, JSON.stringify(DATA));
+  }catch(e){
+    console.error(e);
+    alert("Erreur de stockage (localStorage). Le stockage du navigateur est peut-être plein.\n\nSolution : Exporter/Sauvegarder, puis Réinitialiser (ou supprimer une ancienne carte importée).");
+  }
+  if(!(opts && opts.silent)) renderAll();
+}
+
+
+function saveUIOnly(){
+  try{
+    localStorage.setItem(STORE_KEY, JSON.stringify(DATA));
+  }catch(e){
+    console.error(e);
+  }
+}
+
+
+/* Sauvegarde / robustesse */
+var STORAGE_PERSIST = { supported:false, granted:null };
+
+function initStoragePersist(){
+  try{
+    if(!(navigator && navigator.storage && navigator.storage.persisted)) return;
+    STORAGE_PERSIST.supported=true;
+    navigator.storage.persisted().then(function(gr){
+      STORAGE_PERSIST.granted=!!gr;
+      if(!STORAGE_PERSIST.granted && navigator.storage.persist){
+        navigator.storage.persist().then(function(gr2){
+          STORAGE_PERSIST.granted=!!gr2;
+          try{ renderBackupStatus(); }catch(_){}
+        }).catch(function(){ try{ renderBackupStatus(); }catch(_){ }});
+      }else{
+        try{ renderBackupStatus(); }catch(_){}
+      }
+    }).catch(function(){ try{ renderBackupStatus(); }catch(_){ }});
+  }catch(_){}
+}
+
+function computeUnsavedMoves(){
+  try{
+    var base = toNum(DATA && DATA.meta ? DATA.meta.lastBackupMovesLen : 0) || 0;
+    var cur = DATA && DATA.movements ? DATA.movements.length : 0;
+    if(base>cur) base=cur;
+    return Math.max(0, cur-base);
+  }catch(_){ return 0; }
+}
+
+function fmtBackupAt(iso){
+  if(!iso) return "Jamais";
+  try{
+    // iso full: YYYY-MM-DDTHH:mm:ss...
+    var d=iso.slice(0,10);
+    var t=iso.slice(11,16);
+    return d + " " + t;
+  }catch(_){ return String(iso); }
+}
+
+function markBackupSaved(name){
+  try{
+    if(!DATA.meta) DATA.meta={};
+    DATA.meta.lastBackupAt = (new Date()).toISOString();
+    DATA.meta.lastBackupMovesLen = DATA.movements.length;
+    DATA.meta.lastBackupName = name || DATA.meta.lastBackupName || "";
+    saveData({silent:true});
+    renderBackupStatus();
+  }catch(_){}
+}
+
+function renderBackupStatus(){
+  try{
+    if(!DATA || !DATA.meta) return;
+    var uns = computeUnsavedMoves();
+    var last = fmtBackupAt(DATA.meta.lastBackupAt);
+    setText("bkLast", last);
+    setText("bkUnsaved", String(uns));
+    setText("bkBarLast", last);
+    setText("bkBarUnsaved", String(uns));
+
+    var persistTxt = "—";
+    if(STORAGE_PERSIST.supported){
+      if(STORAGE_PERSIST.granted===true) persistTxt="Oui";
+      else if(STORAGE_PERSIST.granted===false) persistTxt="Non";
+      else persistTxt="…";
+    }else{
+      persistTxt="N/A";
+    }
+    setText("bkPersist", persistTxt);
+
+    var hint = "";
+    if(uns===0 && DATA.meta.lastBackupAt) hint = "Sauvegarde à jour (" + (DATA.meta.lastBackupName||"ZIP/JSON") + ").";
+    else if(uns>0) hint = "⚠️ " + uns + " mouvement(s) non sauvegardé(s). Pensez à exporter / partager le ZIP.";
+    else hint = "Aucune sauvegarde détectée. Utilisez “Sauvegarder (ZIP)” régulièrement.";
+
+    setText("bkHint", hint);
+    setText("bkBarHint", hint);
+
+    // couleur contextuelle
+    var bar=document.getElementById("backupBar");
+    if(bar){
+      bar.style.borderBottomColor = (uns>0) ? "rgba(239,68,68,.35)" : "rgba(34,197,94,.35)";
+    }
+  }catch(_){}
+}
+
+
+/* Brouillon mouvement */
+var DRAFT = { dt:"", type:"IN", lotId:"", paddockId:"" };
+function resetDraft(){ DRAFT = { dt: nowISO(), type:"IN", lotId:"", paddockId:"" }; }
+function renderTypeButtons(){
+  var b1=document.getElementById("btnIN");
+  var b2=document.getElementById("btnOUT");
+  if(b1) b1.classList.toggle("selected", DRAFT.type==="IN");
+  if(b2) b2.classList.toggle("selected", DRAFT.type==="OUT");
+}
+function renderDraft(){
+  renderTypeButtons();
+  var ok = (DRAFT.dt && DRAFT.lotId && DRAFT.paddockId && (DRAFT.type==="IN" || DRAFT.type==="OUT"));
+  var lot = byId(DATA.lots, DRAFT.lotId);
+  var pad = getPaddockMeta(DRAFT.paddockId);
+
+  var mv=document.getElementById("mvReady");
+  if(mv){
+    if(!ok){
+      mv.className="notice warn";
+      var msg="";
+      if(!DRAFT.paddockId) msg="1) Choisissez un paddock sur la carte.";
+      else if(!DRAFT.lotId) msg="2) Choisissez un lot.";
+      else msg="3) Vérifiez la date et Entrée/Sortie.";
+      mv.textContent=msg;
+      var vb=document.getElementById("btnValidate"); if(vb) vb.disabled = true;
+    }else{
+      var typeLabel = (DRAFT.type==="IN" ? "Entrée" : "Sortie");
+      var baseLine = "<b>Prêt</b> — " + esc(DRAFT.dt) + " • " + esc(typeLabel) + " • <b>" + esc(lot?lot.name:"") + "</b> • " + esc(pad?pad.name:"");
+
+      // Alerte décisionnelle au moment de valider une entrée
+      var warn="";
+      if(DRAFT.type==="IN" && DRAFT.paddockId){
+        try{
+          var tgt = toNum(MAP_ANALYSIS.restTarget || 60) || 60;
+          var st = computePaddockStatus(DRAFT.dt);
+          var s = st ? st[DRAFT.paddockId] : null;
+          if(s && s.status==="active"){
+            warn = "⚠️ Paddock déjà occupé (lot(s) : " + lotNames(s.activeLots||[]) + ").";
+          }else if(s && s.lastOut && isFinite(s.restDays) && s.restDays < tgt){
+            warn = "⚠️ Repos insuffisant : " + s.restDays + " j (objectif " + tgt + " j).";
+          }
+        }catch(_){ }
+      }
+
+      if(warn){
+        mv.className="notice warn";
+        mv.innerHTML = baseLine + '<div class="muted small" style="margin-top:6px">' + esc(warn) + '</div>';
+      }else{
+        mv.className="notice ok";
+        mv.innerHTML = baseLine;
+      }
+
+      var vb2=document.getElementById("btnValidate"); if(vb2) vb2.disabled = false;
+    }
+  }
+}
+function setDraftType(t){ DRAFT.type=t; renderDraft(); }
+function setDraftLot(id){ DRAFT.lotId=id; renderDraft(); }
+function setDraftPaddock(id){
+  DRAFT.paddockId=id;
+  if(DATA && DATA.ui) DATA.ui.lastSelectedPaddockId=id;
+  renderDraft();
+  // Toast décisionnel (non bloquant)
+  try{
+    if(DRAFT.type==="IN" && id){
+      var tgt = toNum(MAP_ANALYSIS.restTarget || 60) || 60;
+      var st = computePaddockStatus(DRAFT.dt || nowISO());
+      var s = st ? st[id] : null;
+      if(s && s.lastOut && isFinite(s.restDays) && s.restDays < tgt){
+        showToast("⚠️ Repos " + s.restDays + " j < " + tgt + " j");
+      }
+    }
+  }catch(_){ }
+}
+
+/* UGB */
+function calcUGB(items){
+  var sum=0;
+  for(var i=0;i<DATA.categories.length;i++){
+    var c=DATA.categories[i];
+    var q=toNum((items||{})[c.id]||0);
+    sum += q * toNum(c.ugb);
+  }
+  return sum;
+}
+function compForDate(lotId, dt){
+  var best=null;
+  for(var i=0;i<DATA.compositions.length;i++){
+    var c=DATA.compositions[i];
+    if(c.lotId!==lotId) continue;
+    if(c.eff<=dt){
+      if(!best || c.eff>best.eff) best=c;
+    }
+  }
+  return best;
+}
+function cloneObj(o){ var r={}; for(var k in (o||{})) r[k]=o[k]; return r; }
+var EDIT_LOT_ID="";
+var COMP_DRAFT=null;
+
+/* Rendus */
+function renderSaisie(){
+  var d=document.getElementById("mvDate");
+  if(d && !d.value) d.value=nowISO();
+  if(d) DRAFT.dt = d.value || nowISO();
+
+  // Carte — paramètres d'analyse (repos)
+  var rd=document.getElementById("refDate");
+  if(rd && !rd.value){
+    rd.value = (DATA.ui && DATA.ui.mapRefDate) ? DATA.ui.mapRefDate : nowISO();
+  }
+  MAP_ANALYSIS.refDate = rd ? (rd.value || nowISO()) : nowISO();
+
+  var rt=document.getElementById("restTarget");
+  if(rt && (!rt.value || String(rt.value).trim()==="")){
+    rt.value = String((DATA.ui && isFinite(DATA.ui.restTarget)) ? DATA.ui.restTarget : 60);
+  }
+  MAP_ANALYSIS.restTarget = toNum(rt ? rt.value : 60) || 60;
+
+  // Couche carte + légende
+  var ml=document.getElementById("mapLayer");
+  if(ml){
+    var v = (DATA.ui && DATA.ui.mapLayer) ? DATA.ui.mapLayer : (ml.value||"rest");
+    ml.value = v;
+  }
+  MAP_ANALYSIS.layer = ml ? (ml.value||"rest") : "rest";
+
+  var pm=document.getElementById("pressureMax");
+  if(pm && (!pm.value || String(pm.value).trim()==="")){
+    pm.value = String((DATA.ui && isFinite(DATA.ui.pressureMax)) ? DATA.ui.pressureMax : 2);
+  }
+  MAP_ANALYSIS.pressureMax = toNum(pm ? pm.value : 2) || 2;
+
+  updateMapLegend();
+
+  rebuildMapStats(false);
+
+  var lb="";
+  for(var i=0;i<DATA.lots.length;i++){
+    var l=DATA.lots[i];
+    var cls="btn big " + (DRAFT.lotId===l.id ? "primary":"");
+    lb += '<button class="'+cls+'" data-id="'+esc(l.id)+'">'+esc(l.name)+'</button>';
+  }
+  if(!lb) lb = '<div class="notice warn">Aucun lot. Allez dans <b>Lots</b> → “Créer”.</div>';
+  setHTML("lotButtons", lb);
+  var bts=document.querySelectorAll('#lotButtons button[data-id]');
+  for(var k=0;k<bts.length;k++) bts[k].addEventListener('click', function(){ setDraftLot(this.getAttribute('data-id')); renderSaisie(); });
+
+  var pb="";
+  for(var j=0;j<PARCELS.length;j++){
+    var g=PARCELS[j];
+    var act=(DATA.ui.lastSelectedParcel===g);
+    pb += '<button class="btn '+(act?'info':'')+'" data-g="'+esc(g)+'">'+esc(titleCase(g))+'</button>';
+  }
+  setHTML("parcelButtons", pb);
+  var pbs=document.querySelectorAll('#parcelButtons button[data-g]');
+  for(var kk=0;kk<pbs.length;kk++) pbs[kk].addEventListener('click', function(){
+    DATA.ui.lastSelectedParcel=this.getAttribute('data-g');
+    saveData();
+  });
+
+  var selG=DATA.ui.lastSelectedParcel || (PARCELS[0]||"");
+  var padHtml=""; var shown=0;
+  for(var i2=0;i2<PAD_META.length;i2++){
+    var p=PAD_META[i2];
+    if(selG && p.group!==selG) continue;
+    shown++;
+    var cls2="btn " + (DRAFT.paddockId===p.id ? "primary":"");
+    padHtml += '<button class="'+cls2+'" data-p="'+esc(p.id)+'">'+esc(p.name)+'</button>';
+  }
+  if(!shown) padHtml='<div class="notice warn">Aucun paddock pour cette parcelle.</div>';
+  setHTML("paddockButtons", padHtml);
+  var pbtn=document.querySelectorAll('#paddockButtons button[data-p]');
+  for(var t=0;t<pbtn.length;t++) pbtn[t].addEventListener('click', function(){ setDraftPaddock(this.getAttribute('data-p')); });
+
+  renderDraft();
+  renderRecentMoves();
+}
+function renderRecentMoves(){
+  var rows=DATA.movements.slice().sort(function(a,b){ return a.dt<b.dt?1:-1; }).slice(0,10);
+  if(!rows.length){ setHTML("recentMoves", '<div class="notice">Aucun mouvement enregistré.</div>'); return; }
+  var html='<table class="table"><thead><tr><th>Date</th><th>Type</th><th>Lot</th><th>Paddock</th><th class="right">Actions</th></tr></thead><tbody>';
+  for(var i=0;i<rows.length;i++){
+    var m=rows[i];
+    var lot=byId(DATA.lots, m.lotId);
+    var pad=getPaddockMeta(m.paddockId);
+    html += '<tr><td><b>'+esc(m.dt)+'</b></td><td>'+esc(typeLabel(m.type))+'</td><td>'+esc(lot?lot.name:"?")+'</td><td>'+esc(pad?pad.name:"?")+'</td>' +
+      '<td class="right"><button class="btn danger" data-del="'+esc(m.id)+'">Supprimer</button></td></tr>';
+  }
+  html += '</tbody></table>';
+  setHTML("recentMoves", html);
+  var dels=document.querySelectorAll('#recentMoves button[data-del]');
+  for(var j=0;j<dels.length;j++) dels[j].addEventListener('click', function(){ deleteMoveNoConfirm(this.getAttribute('data-del')); });
+}
+
+
+function renderLotsView(){
+  var html="";
+  for(var i=0;i<DATA.lots.length;i++){
+    var l=DATA.lots[i];
+    html += '<div class="row" style="justify-content:space-between;border:1px solid var(--border);border-radius:14px;padding:10px;background:rgba(255,255,255,.02)">' +
+      '<div><b>'+esc(l.name)+'</b></div>' +
+      '<div class="row"><button class="btn" data-act="edit" data-id="'+esc(l.id)+'">Ouvrir</button></div>' +
+      '</div>';
+  }
+  if(!html) html='<div class="notice warn">Aucun lot. Créez un lot pour commencer.</div>';
+  setHTML("lotsList", html);
+  var btns=document.querySelectorAll('#lotsList button[data-act="edit"]');
+  for(var k=0;k<btns.length;k++) btns[k].addEventListener('click', function(){ editLot(this.getAttribute('data-id')); });
+
+  if(!EDIT_LOT_ID){
+    document.getElementById("lotEditEmpty").style.display="block";
+    document.getElementById("lotEdit").style.display="none";
+    return;
+  }
+  document.getElementById("lotEditEmpty").style.display="none";
+  document.getElementById("lotEdit").style.display="block";
+  var lot=byId(DATA.lots, EDIT_LOT_ID);
+  setText("editLotName", lot?lot.name:"—");
+  var cd=document.getElementById("compDate"); if(cd && !cd.value) cd.value=nowISO();
+  renderCompInputs();
+  renderCompHistory();
+}
+
+function editLot(lotId){ EDIT_LOT_ID=lotId; COMP_DRAFT=null; renderLotsView(); }
+
+function setCompDraft(catId, val){
+  var cd=document.getElementById("compDate");
+  var eff = cd ? (cd.value||nowISO()) : nowISO();
+  if(!COMP_DRAFT || COMP_DRAFT.lotId!==EDIT_LOT_ID || COMP_DRAFT.eff!==eff){
+    COMP_DRAFT={lotId:EDIT_LOT_ID, eff:eff, items:{}};
+    var base=compForDate(EDIT_LOT_ID, eff);
+    if(base) COMP_DRAFT.items=cloneObj(base.items);
+  }
+  COMP_DRAFT.items[catId]=val;
+  updateCompUGB();
+}
+
+function updateCompUGB(){
+  var cd=document.getElementById("compDate");
+  var eff = cd ? (cd.value||nowISO()) : nowISO();
+  var items={};
+  if(COMP_DRAFT && COMP_DRAFT.lotId===EDIT_LOT_ID && COMP_DRAFT.eff===eff) items=COMP_DRAFT.items;
+  else { var base=compForDate(EDIT_LOT_ID, eff); items=base?base.items:{}; }
+  var el=document.getElementById("compUGB"); if(el) el.value=fmt(calcUGB(items),2);
+}
+
+function renderCompInputs(){
+  var cd=document.getElementById("compDate");
+  var dt = cd ? (cd.value||nowISO()) : nowISO();
+  var base=compForDate(EDIT_LOT_ID, dt);
+  var items = base ? cloneObj(base.items) : {};
+  if(COMP_DRAFT && COMP_DRAFT.lotId===EDIT_LOT_ID && COMP_DRAFT.eff===dt) items=cloneObj(COMP_DRAFT.items);
+
+  var controls =
+    '<div class="row" style="justify-content:flex-end; margin-bottom:10px">' +
+      '<input id="compNewCatName" placeholder="Nouvelle catégorie…" style="flex:1 1 220px">' +
+      '<input id="compNewCatUGB" type="number" step="0.01" placeholder="UGB" style="width:120px">' +
+      '<button class="btn" id="btnAddCatFromComp" type="button">Ajouter catégorie</button>' +
+    '</div>';
+
+  var rows = controls +
+    '<table class="table"><thead><tr>' +
+      '<th>Catégorie</th><th class="right">Effectif</th><th class="right">Coef UGB</th><th class="right">UGB</th><th class="right">Actions</th>' +
+    '</tr></thead><tbody>';
+
+  for(var i=0;i<DATA.categories.length;i++){
+    var c=DATA.categories[i];
+    var v=toNum(items[c.id]||0);
+    var u=v*toNum(c.ugb);
+    rows += '<tr>' +
+      '<td><b>'+esc(c.name)+'</b></td>' +
+      '<td class="right"><input type="number" min="0" step="1" data-cat="'+esc(c.id)+'" value="'+(v?String(v):"")+'" style="width:120px"></td>' +
+      '<td class="right">'+fmt(c.ugb,2)+'</td>' +
+      '<td class="right">'+fmt(u,2)+'</td>' +
+      '<td class="right"><button class="btn danger" type="button" data-delcat2="'+esc(c.id)+'">Suppr.</button></td>' +
+    '</tr>';
+  }
+  rows += '</tbody></table>';
+  setHTML("compInputs", rows);
+
+  var btn=document.getElementById("btnAddCatFromComp");
+  if(btn) btn.addEventListener("click", addCategoryFromComp);
+
+  var ins=document.querySelectorAll('#compInputs input[data-cat]');
+  for(var k=0;k<ins.length;k++) ins[k].addEventListener('input', function(){ setCompDraft(this.getAttribute('data-cat'), toNum(this.value||0)); });
+
+  var dels=document.querySelectorAll('#compInputs button[data-delcat2]');
+  for(var j=0;j<dels.length;j++){
+    dels[j].addEventListener("click", function(){ deleteCategory(this.getAttribute("data-delcat2")); });
+  }
+
+  updateCompUGB();
+}
+
+function renderCompHistory(){
+  var comps=[];
+  for(var i=0;i<DATA.compositions.length;i++) if(DATA.compositions[i].lotId===EDIT_LOT_ID) comps.push(DATA.compositions[i]);
+  comps.sort(function(a,b){ return a.eff<b.eff?1:-1; });
+  if(!comps.length){ setHTML("compHistory", '<div class="notice warn">Aucune composition enregistrée.</div>'); return; }
+  var html='<table class="table"><thead><tr><th>Date d’effet</th><th class="right">UGB</th><th class="right">Actions</th></tr></thead><tbody>';
+  for(var k=0;k<comps.length;k++){
+    var c=comps[k];
+    html += '<tr><td><b>'+esc(c.eff)+'</b></td><td class="right">'+fmt(calcUGB(c.items||{}),2)+'</td>' +
+      '<td class="right"><button class="btn" data-load="'+esc(c.id)+'">Charger</button> <button class="btn danger" data-del="'+esc(c.id)+'">Supprimer</button></td></tr>';
+  }
+  html += '</tbody></table>';
+  setHTML("compHistory", html);
+  var loads=document.querySelectorAll('#compHistory button[data-load]');
+  for(var j=0;j<loads.length;j++) loads[j].addEventListener('click', function(){ loadComp(this.getAttribute('data-load')); });
+  var dels=document.querySelectorAll('#compHistory button[data-del]');
+  for(var j2=0;j2<dels.length;j2++) dels[j2].addEventListener('click', function(){ delComp(this.getAttribute('data-del')); });
+}
+function loadComp(id){
+  var c=byId(DATA.compositions, id); if(!c) return;
+  var cd=document.getElementById("compDate"); if(cd) cd.value=c.eff;
+  COMP_DRAFT={lotId:EDIT_LOT_ID, eff:c.eff, items:cloneObj(c.items)};
+  renderCompInputs();
+}
+function delComp(id){
+  if(!confirm("Supprimer cette composition ?")) return;
+  var out=[];
+  for(var i=0;i<DATA.compositions.length;i++) if(DATA.compositions[i].id!==id) out.push(DATA.compositions[i]);
+  DATA.compositions=out;
+  saveData();
+}
+function saveComposition(){
+  if(!EDIT_LOT_ID) return;
+  var cd=document.getElementById("compDate"); var eff=cd?(cd.value||nowISO()):nowISO();
+  var items={};
+  var ins=document.querySelectorAll('#compInputs input[data-cat]');
+  for(var k=0;k<ins.length;k++){ var cat=ins[k].getAttribute('data-cat'); var val=toNum(ins[k].value||0); if(val) items[cat]=val; }
+  var kept=[];
+  for(var i=0;i<DATA.compositions.length;i++){ var c=DATA.compositions[i]; if(!(c.lotId===EDIT_LOT_ID && c.eff===eff)) kept.push(c); }
+  kept.push({id:uuid(), lotId:EDIT_LOT_ID, eff:eff, items:items});
+  DATA.compositions=kept;
+  COMP_DRAFT=null;
+  saveData();
+}
+function dupLast(){
+  if(!EDIT_LOT_ID) return;
+  var comps=[];
+  for(var i=0;i<DATA.compositions.length;i++) if(DATA.compositions[i].lotId===EDIT_LOT_ID) comps.push(DATA.compositions[i]);
+  comps.sort(function(a,b){ return a.eff<b.eff?1:-1; });
+  if(!comps.length) return;
+  var last=comps[0];
+  var cd=document.getElementById("compDate"); var eff=cd?(cd.value||nowISO()):nowISO();
+  COMP_DRAFT={lotId:EDIT_LOT_ID, eff:eff, items:cloneObj(last.items)};
+  renderCompInputs();
+}
+function renameLot(){
+  if(!EDIT_LOT_ID) return;
+  var lot=byId(DATA.lots, EDIT_LOT_ID); if(!lot) return;
+  var name=prompt("Nouveau nom du lot :", lot.name);
+  if(!name) return;
+  lot.name=name.trim();
+  saveData();
+}
+function deleteLot(){
+  if(!EDIT_LOT_ID) return;
+  if(!confirm("Supprimer ce lot ?")) return;
+  var out=[]; for(var i=0;i<DATA.lots.length;i++) if(DATA.lots[i].id!==EDIT_LOT_ID) out.push(DATA.lots[i]);
+  DATA.lots=out; EDIT_LOT_ID=""; saveData();
+}
+
+/* Journal */
+function renderJournal(){
+  var sel=document.getElementById("fltLot");
+  if(sel){
+    var opt='<option value="">Tous les lots</option>';
+    for(var i=0;i<DATA.lots.length;i++) opt += '<option value="'+esc(DATA.lots[i].id)+'">'+esc(DATA.lots[i].name)+'</option>';
+    sel.innerHTML=opt;
+  }
+  applyJournalFilters();
+}
+function applyJournalFilters(){
+  var from=document.getElementById("fltFrom")?document.getElementById("fltFrom").value:"";
+  var to=document.getElementById("fltTo")?document.getElementById("fltTo").value:"";
+  var lotId=document.getElementById("fltLot")?document.getElementById("fltLot").value:"";
+  var rows=[];
+  for(var i=0;i<DATA.movements.length;i++){
+    var m=DATA.movements[i];
+    if(from && m.dt<from) continue;
+    if(to && m.dt>to) continue;
+    if(lotId && m.lotId!==lotId) continue;
+    rows.push(m);
+  }
+  rows.sort(function(a,b){ return a.dt<b.dt?1:-1; });
+  if(!rows.length){ setHTML("journalTable", '<div class="notice">Aucun résultat.</div>'); return; }
+  var html='<table class="table"><thead><tr><th>Date</th><th>Type</th><th>Lot</th><th>Paddock</th><th class="right">Actions</th></tr></thead><tbody>';
+  for(var k=0;k<rows.length;k++){
+    var m2=rows[k];
+    var lot=byId(DATA.lots, m2.lotId);
+    var pad=getPaddockMeta(m2.paddockId);
+    html += '<tr><td><b>'+esc(m2.dt)+'</b></td><td>'+esc(typeLabel(m2.type) + (m2.auto?" (auto)":""))+'</td><td>'+esc(lot?lot.name:"?")+'</td><td>'+esc(pad?pad.name:"?")+'</td>' +
+      '<td class="right"><button class="btn danger" data-del="'+esc(m2.id)+'">Supprimer</button></td></tr>';
+  }
+  html += '</tbody></table>';
+  setHTML("journalTable", html);
+  var dels=document.querySelectorAll('#journalTable button[data-del]');
+  for(var j=0;j<dels.length;j++) dels[j].addEventListener('click', function(){ deleteMove(this.getAttribute('data-del')); });
+}
+function deleteMove(id){
+  if(!confirm("Supprimer ce mouvement ?")) return;
+  var out=[]; for(var i=0;i<DATA.movements.length;i++) if(DATA.movements[i].id!==id) out.push(DATA.movements[i]);
+  DATA.movements=out; saveData();
+}
+function deleteMoveNoConfirm(id){
+  var out=[]; for(var i=0;i<DATA.movements.length;i++) if(DATA.movements[i].id!==id) out.push(DATA.movements[i]);
+  DATA.movements=out; saveData();
+}
+function undoLastMove(){
+  if(!DATA.movements.length) return;
+  DATA.movements.pop();
+  saveData();
+}
+
+/* Export */
+function csvEscape(v){
+  v = (v===null||v===undefined) ? "" : String(v);
+  if(v.indexOf(";")>=0 || v.indexOf('"')>=0 || v.indexOf("\n")>=0) v = '"' + v.replace(/"/g,'""') + '"';
+  return v;
+}
+function toCSV(rows, headers){
+  var out=headers.join(";")+"\n";
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i], line=[];
+    for(var j=0;j<headers.length;j++) line.push(csvEscape(r[headers[j]]));
+    out += line.join(";")+"\n";
+  }
+  return out;
+}
+function downloadFile(name, content, mime){
+  var blob=new Blob([content], {type:mime||"text/plain"});
+  var a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+function u16(n){ return new Uint8Array([n & 255, (n>>>8)&255]); }
+function u32(n){ return new Uint8Array([n & 255, (n>>>8)&255, (n>>>16)&255, (n>>>24)&255]); }
+function bytesJoin(chunks){
+  var len=0;
+  for(var i=0;i<chunks.length;i++) len += (chunks[i] ? chunks[i].length : 0);
+  var out=new Uint8Array(len);
+  var o=0;
+  for(var j=0;j<chunks.length;j++){
+    var c=chunks[j];
+    if(!c) continue;
+    out.set(c, o);
+    o += c.length;
+  }
+  return out;
+}
+function crc32(buf){
+  var table=crc32.table||(crc32.table=(function(){
+    var c, t=[], k;
+    for(var n=0;n<256;n++){
+      c=n;
+      for(k=0;k<8;k++) c = ((c & 1)? (0xEDB88320 ^ (c>>>1)) : (c>>>1));
+      t[n]=c>>>0;
+    }
+    return t;
+  })());
+  var crc=0xFFFFFFFF;
+  for(var i=0;i<buf.length;i++) crc = table[(crc ^ buf[i]) & 0xFF] ^ (crc>>>8);
+  return (crc ^ 0xFFFFFFFF)>>>0;
+}
+function strToUtf8Bytes(s){
+  return (new TextEncoder()).encode(s);
+}
+function buildZipStore(files){
+  // ZIP "store" (sans compression) — implémentation binaire-safe.
+  // files: [{name, bytes(Uint8Array)}]
+  var parts=[];
+  var centralParts=[];
+  var offset=0;
+
+  // DOS time/date (optionnel) : on renseigne pour compatibilité.
+  function dosTimeDate(d){
+    try{
+      var dt = d || new Date();
+      var sec = Math.floor(dt.getSeconds()/2);
+      var min = dt.getMinutes();
+      var hr  = dt.getHours();
+      var day = dt.getDate();
+      var mon = dt.getMonth()+1;
+      var yr  = dt.getFullYear();
+      if(yr<1980) yr=1980;
+      var dosTime = (hr<<11) | (min<<5) | sec;
+      var dosDate = ((yr-1980)<<9) | (mon<<5) | day;
+      return {t:dosTime, d:dosDate};
+    }catch(_){
+      return {t:0, d:0};
+    }
+  }
+  var td = dosTimeDate(new Date());
+
+  for(var i=0;i<files.length;i++){
+    var f=files[i];
+    var nameBytes=strToUtf8Bytes(f.name);
+    var dataBytes=f.bytes;
+    var crc=crc32(dataBytes);
+
+    // Local file header (30 bytes)
+    var localHdr = bytesJoin([
+      u32(0x04034b50),
+      u16(20),          // version needed
+      u16(0),           // flags
+      u16(0),           // compression (store)
+      u16(td.t), u16(td.d),
+      u32(crc),
+      u32(dataBytes.length),
+      u32(dataBytes.length),
+      u16(nameBytes.length),
+      u16(0)            // extra len
+    ]);
+    parts.push(localHdr, nameBytes, dataBytes);
+
+    // Central directory header (46 bytes)
+    var centHdr = bytesJoin([
+      u32(0x02014b50),
+      u16(20), u16(20), // version made by / needed
+      u16(0), u16(0),   // flags / compression
+      u16(td.t), u16(td.d),
+      u32(crc),
+      u32(dataBytes.length),
+      u32(dataBytes.length),
+      u16(nameBytes.length),
+      u16(0),           // extra len
+      u16(0),           // comment len
+      u16(0),           // disk number start
+      u16(0),           // internal attrs
+      u32(0),           // external attrs
+      u32(offset)       // local header offset
+    ]);
+    centralParts.push(centHdr, nameBytes);
+
+    offset += localHdr.length + nameBytes.length + dataBytes.length;
+  }
+
+  var centralStart=offset;
+  for(var j=0;j<centralParts.length;j++){
+    parts.push(centralParts[j]);
+    offset += centralParts[j].length;
+  }
+  var centralSize = offset - centralStart;
+
+  // End of central directory (22 bytes)
+  var endHdr = bytesJoin([
+    u32(0x06054b50),
+    u16(0), u16(0),
+    u16(files.length),
+    u16(files.length),
+    u32(centralSize),
+    u32(centralStart),
+    u16(0)
+  ]);
+  parts.push(endHdr);
+
+  return new Blob(parts, {type:"application/zip"});
+}
+function downloadBlob(filename, blob){
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");
+  a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 120000);
+}
+
+function exportMoves(year){
+  var rows=[];
+  for(var i=0;i<DATA.movements.length;i++){
+    var m=DATA.movements[i];
+    if(year && m.dt.slice(0,4)!==String(year)) continue;
+    var lot=byId(DATA.lots, m.lotId);
+    var pad=getPaddockMeta(m.paddockId);
+    rows.push({
+      id:m.id, date:m.dt, type:m.type, lot_name:lot?lot.name:"",
+      paddock_id:m.paddockId, paddock_name:pad?pad.name:"", parcelle:pad?pad.group:"",
+      surface_ha: pad?fmt(pad.area_ha,4):""
+    });
+  }
+  downloadFile("mouvements.csv", toCSV(rows, ["id","date","type","lot_name","paddock_id","paddock_name","parcelle","surface_ha"]), "text/csv");
+}
+function exportComps(){
+  var rows=[];
+  for(var i=0;i<DATA.compositions.length;i++){
+    var c=DATA.compositions[i];
+    var lot=byId(DATA.lots, c.lotId);
+    rows.push({ lot_name:lot?lot.name:"", effective_date:c.eff, ugb_total:fmt(calcUGB(c.items||{}),2), items_json:JSON.stringify(c.items||{}) });
+  }
+  downloadFile("compositions.csv", toCSV(rows, ["lot_name","effective_date","ugb_total","items_json"]), "text/csv");
+}
+function buildIntervals(year){
+  var y0=String(year);
+  var start=y0+"-01-01";
+  var end=y0+"-12-31";
+  return buildIntervalsRange(start, end);
+}
+function dateAddOne(d){
+  var p=d.split("-"); var dt=new Date(Number(p[0]), Number(p[1])-1, Number(p[2]));
+  dt.setDate(dt.getDate()+1);
+  var m=("0"+(dt.getMonth()+1)).slice(-2); var day=("0"+dt.getDate()).slice(-2);
+  return dt.getFullYear()+"-"+m+"-"+day;
+}
+function exportDaily(year){
+  var intervals=buildIntervals(year);
+  var rows=[];
+  for(var i=0;i<intervals.length;i++){
+    var iv=intervals[i];
+    var cur=iv.start;
+    while(cur<=iv.end){
+      var pad=getPaddockMeta(iv.paddockId);
+      var lot=byId(DATA.lots, iv.lotId);
+      var comp=compForDate(iv.lotId, cur);
+      var ugb=comp?calcUGB(comp.items||{}):0;
+      var area=pad?toNum(pad.area_ha):0;
+      rows.push({
+        date:cur, lot_name:lot?lot.name:"",
+        paddock_id:iv.paddockId, paddock_name:pad?pad.name:"", parcelle:pad?pad.group:"",
+        surface_ha: area>0?fmt(area,4):"",
+        ugb_total: fmt(ugb,2),
+        ugb_jours: fmt(ugb,2),
+        ugb_jours_ha: area>0?fmt(ugb/area,2):""
+      });
+      cur=dateAddOne(cur);
+    }
+  }
+  downloadFile("calendrier_journalier.csv", toCSV(rows, ["date","lot_name","paddock_id","paddock_name","parcelle","surface_ha","ugb_total","ugb_jours","ugb_jours_ha"]), "text/csv");
+}
+
+function getExportMovesCSV(year){
+  var rows=[];
+  for(var i=0;i<DATA.movements.length;i++){
+    var m=DATA.movements[i];
+    if(year && m.dt.slice(0,4)!==String(year)) continue;
+    var lot=byId(DATA.lots, m.lotId);
+    var pad=getPaddockMeta(m.paddockId);
+    rows.push({
+      id:m.id, date:m.dt, type:m.type, lot_name:lot?lot.name:"",
+      paddock_id:m.paddockId, paddock_name:pad?pad.name:"", parcelle:pad?pad.group:"",
+      surface_ha: pad?fmt(pad.area_ha,4):""
+    });
+  }
+  return {name:"mouvements_"+String(year)+".csv", content:toCSV(rows, ["id","date","type","lot_name","paddock_id","paddock_name","parcelle","surface_ha"])};
+}
+function getExportCompsCSV(){
+  var rows=[];
+  for(var i=0;i<DATA.compositions.length;i++){
+    var c=DATA.compositions[i];
+    var lot=byId(DATA.lots, c.lotId);
+    rows.push({ lot_name:lot?lot.name:"", effective_date:c.eff, ugb_total:fmt(calcUGB(c.items||{}),2), items_json:JSON.stringify(c.items||{}) });
+  }
+  return {name:"compositions.csv", content:toCSV(rows, ["lot_name","effective_date","ugb_total","items_json"])};
+}
+function getExportDailyCSV(year){
+  var intervals=buildIntervals(year);
+  var rows=[];
+  for(var i=0;i<intervals.length;i++){
+    var iv=intervals[i];
+    var cur=iv.start;
+    while(cur<=iv.end){
+      var pad=getPaddockMeta(iv.paddockId);
+      var lot=byId(DATA.lots, iv.lotId);
+      var comp=compForDate(iv.lotId, cur);
+      var ugb=comp?calcUGB(comp.items||{}):0;
+      var area=pad?toNum(pad.area_ha):0;
+      rows.push({
+        date:cur, lot_name:lot?lot.name:"",
+        paddock_id:iv.paddockId, paddock_name:pad?pad.name:"", parcelle:pad?pad.group:"",
+        surface_ha: area>0?fmt(area,4):"",
+        ugb_total: fmt(ugb,2),
+        ugb_jours: fmt(ugb,2),
+        ugb_jours_ha: area>0?fmt(ugb/area,2):""
+      });
+      cur=dateAddOne(cur);
+    }
+  }
+  return {name:"calendrier_journalier_"+String(year)+".csv", content:toCSV(rows, ["date","lot_name","paddock_id","paddock_name","parcelle","surface_ha","ugb_total","ugb_jours","ugb_jours_ha"])};
+}
+
+var LAST_EXPORT = {name:"", blob:null};
+
+function makeAllZip(year){
+  var y = year || (new Date()).getFullYear();
+  var a=getExportMovesCSV(y);
+  var b=getExportCompsCSV();
+  var c=getExportDailyCSV(y);
+  var s={name:"sauvegarde_paturage.json", content:JSON.stringify(DATA,null,2)};
+
+  var files=[
+    {name:a.name, bytes:strToUtf8Bytes(a.content)},
+    {name:b.name, bytes:strToUtf8Bytes(b.content)},
+    {name:c.name, bytes:strToUtf8Bytes(c.content)},
+    {name:s.name, bytes:strToUtf8Bytes(s.content)}
+  ];
+
+  var blob=buildZipStore(files);
+  var stamp=(new Date()).toISOString().slice(0,16).replaceAll("-","").replaceAll(":","").replace("T","_");
+  var fname="exports_paturage_"+String(y)+"_"+stamp+".zip";
+  LAST_EXPORT={name:fname, blob:blob};
+  return LAST_EXPORT;
+}
+
+function exportAllZip(year){
+  var exp = makeAllZip(year);
+  downloadBlob(exp.name, exp.blob);
+  setText("exportMsg", "ZIP généré : "+exp.name+" (téléchargé).");
+  markBackupSaved(exp.name);
+}
+
+function prepareEmail(){
+  var to="pokokoet@gmail.com";
+  var y=document.getElementById("yearSel")?document.getElementById("yearSel").value:"";
+  var subj=encodeURIComponent("Exports pâturage "+(y||""));
+  var body=encodeURIComponent("Bonjour,\n\nVeuillez trouver en pièce jointe le ZIP d’exports généré par l’application de suivi de pâturage.\n\nNom du fichier : "+(LAST_EXPORT.name||"exports_paturage.zip")+"\n\nCordialement.");
+  window.location.href="mailto:"+to+"?subject="+subj+"&body="+body;
+  setText("exportMsg", "Email préparé. Joignez le ZIP téléchargé (un navigateur ne peut pas l’attacher automatiquement).");
+}
+
+async function shareLastExport(){
+  try{
+    var yEl=document.getElementById("yearSel");
+    var y = yEl ? Number(yEl.value) : (new Date()).getFullYear();
+
+    if(!LAST_EXPORT || !LAST_EXPORT.blob){
+      // génère sans imposer un téléchargement préalable
+      makeAllZip(y);
+    }
+
+    var file=new File([LAST_EXPORT.blob], LAST_EXPORT.name, {type:"application/zip"});
+    if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
+      try{
+        await navigator.share({title:"Exports pâturage", text:"Exports pâturage", files:[file]});
+        setText("exportMsg", "Partage effectué.");
+        markBackupSaved(LAST_EXPORT.name);
+      }catch(e){
+        console.error(e);
+        setText("exportMsg", "Partage annulé.");
+      }
+    }else{
+      alert("Partage non supporté sur cet appareil/navigateur. Utilisez le ZIP téléchargé puis partagez-le depuis l’application Fichiers.");
+    }
+  }catch(e){
+    console.error(e);
+    alert("Impossible de partager le ZIP sur cet appareil.");
+  }
+}
+
+/* Admin : catégories */
+function renderCats(){
+  var html='<table class="table"><thead><tr><th>Catégorie</th><th class="right">Coef UGB</th><th class="right">Actions</th></tr></thead><tbody>';
+  for(var i=0;i<DATA.categories.length;i++){
+    var c=DATA.categories[i];
+    html += '<tr>' +
+      '<td><input data-cid="'+esc(c.id)+'" value="'+esc(c.name)+'" style="width:100%"></td>' +
+      '<td class="right"><input type="number" step="0.01" data-uid="'+esc(c.id)+'" value="'+String(c.ugb)+'" style="width:120px"></td>' +
+      '<td class="right"><button class="btn danger" type="button" data-delcat="'+esc(c.id)+'">Supprimer</button></td>' +
+      '</tr>';
+  }
+  html += '</tbody></table>';
+
+  html += '<div class="hr"></div>' +
+    '<div class="row">' +
+      '<input id="newCatName" placeholder="Nouvelle catégorie…" style="flex:1 1 260px">' +
+      '<input id="newCatUGB" type="number" step="0.01" placeholder="UGB" style="width:120px">' +
+      '<button class="btn primary" id="btnAddCat" type="button">Ajouter</button>' +
+    '</div>' +
+    '<div class="muted small" style="margin-top:8px">Les catégories sont utilisées dans les compositions de lots.</div>';
+
+  setHTML("catsTable", html);
+  setText("kpiPads", String(PAD_META.length));
+
+  var btn=document.getElementById("btnAddCat");
+  if(btn) btn.addEventListener("click", addCategoryFromUI);
+
+  var dels=document.querySelectorAll('#catsTable button[data-delcat]');
+  for(var k=0;k<dels.length;k++){
+    dels[k].addEventListener("click", function(){ deleteCategory(this.getAttribute("data-delcat")); });
+  }
+}
+function slugifyId(s){
+  s = String(s||"").toLowerCase().trim();
+  try{ s = s.normalize("NFD").replace(/[\u0300-\u036f]/g,""); }catch(e){}
+  s = s.replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,"");
+  if(!s) s="cat";
+  return s;
+}
+function addCategory(name, ugb){
+  var nm=String(name||"").trim();
+  if(!nm) return null;
+  var u=toNum(ugb||0);
+  var base=slugifyId(nm);
+  var id=base, k=2;
+  while(byId(DATA.categories, id)) { id = base + "_" + (k++); }
+  DATA.categories.push({id:id, name:nm, ugb:u, desc:""});
+  return id;
+}
+
+function addCategoryFromUI(){
+  var nEl=document.getElementById("newCatName");
+  var uEl=document.getElementById("newCatUGB");
+  var name=nEl ? nEl.value.trim() : "";
+  if(!name) return;
+  addCategory(name, toNum(uEl ? uEl.value : 0));
+  if(nEl) nEl.value="";
+  if(uEl) uEl.value="";
+  saveData();
+}
+
+function addCategoryFromComp(){
+  var nEl=document.getElementById("compNewCatName");
+  var uEl=document.getElementById("compNewCatUGB");
+  var name=nEl ? nEl.value.trim() : "";
+  if(!name) return;
+  addCategory(name, toNum(uEl ? uEl.value : 0));
+  if(nEl) nEl.value="";
+  if(uEl) uEl.value="";
+  saveData();
+}
+
+function categoryIsUsed(catId){
+  for(var i=0;i<DATA.compositions.length;i++){
+    var it=(DATA.compositions[i].items||{});
+    if(it[catId] && toNum(it[catId])>0) return true;
+  }
+  return false;
+}
+function deleteCategory(catId){
+  if(!catId) return;
+  var c=byId(DATA.categories, catId);
+  if(!c) return;
+  var used = categoryIsUsed(catId);
+  var msg = used ?
+    ("La catégorie \""+c.name+"\" est utilisée dans au moins une composition.\n\nSupprimer quand même ? (Elle sera retirée des compositions.)") :
+    ("Supprimer la catégorie \""+c.name+"\" ?");
+  if(!confirm(msg)) return;
+
+  var out=[];
+  for(var i=0;i<DATA.categories.length;i++) if(DATA.categories[i].id!==catId) out.push(DATA.categories[i]);
+  DATA.categories=out;
+
+  for(var j=0;j<DATA.compositions.length;j++){
+    if(DATA.compositions[j].items && (catId in DATA.compositions[j].items)){
+      delete DATA.compositions[j].items[catId];
+    }
+  }
+  saveData();
+}
+
+function saveCatsFromUI(){
+  var names=document.querySelectorAll('#catsTable input[data-cid]');
+  var ugb=document.querySelectorAll('#catsTable input[data-uid]');
+  var map={};
+  for(var i=0;i<DATA.categories.length;i++) map[DATA.categories[i].id]=DATA.categories[i];
+  for(var j=0;j<names.length;j++){ var id=names[j].getAttribute('data-cid'); if(map[id]) map[id].name=names[j].value.trim()||map[id].name; }
+  for(var k=0;k<ugb.length;k++){ var id2=ugb[k].getAttribute('data-uid'); if(map[id2]) map[id2].ugb=toNum(ugb[k].value); }
+  saveData();
+}
+
+/* Dashboard */
+function computeOpenLots(){
+  var last={};
+  for(var j=0;j<DATA.movements.length;j++){
+    var mv=DATA.movements[j];
+    if(!last[mv.lotId] || last[mv.lotId].dt < mv.dt) last[mv.lotId]=mv;
+  }
+  var count=0;
+  for(var lid in last) if(last[lid].type==="IN") count++;
+  return count;
+}
+function lotStayAt(lotId, dt){
+  var arr=[];
+  for(var i=0;i<DATA.movements.length;i++){
+    var m=DATA.movements[i];
+    if(!m || m.lotId!==lotId || !m.dt) continue;
+    if(dt && m.dt>dt) continue;
+    arr.push(m);
+  }
+  arr.sort(function(a,b){
+    if(a.dt<b.dt) return -1;
+    if(a.dt>b.dt) return 1;
+    if(a.type===b.type) return 0;
+    return (a.type==="IN") ? -1 : 1;
+  });
+  var cur="", start="";
+  for(var k=0;k<arr.length;k++){
+    var mv=arr[k];
+    if(mv.type==="IN"){
+      cur=mv.paddockId; start=mv.dt;
+    }else if(mv.type==="OUT"){
+      if(cur===mv.paddockId){ cur=""; start=""; }
+    }
+  }
+  return {paddockId:cur, start:start};
+}
+
+function renderDash(){
+  try{
+    setText("kpiLots", String(DATA.lots.length));
+    setText("kpiMoves", String(DATA.movements.length));
+    setText("kpiOpen", String(computeOpenLots()));
+    setHTML("stateBox", "Lots: "+DATA.lots.length+" • Mouvements: "+DATA.movements.length+" • Paddocks: "+PAD_META.length);
+
+    renderBackupStatus();
+
+    var dashEl=document.getElementById("sub-dash");
+    if(!(dashEl && dashEl.classList.contains("active"))) return;
+
+    var ref = (MAP_ANALYSIS && MAP_ANALYSIS.refDate) ? MAP_ANALYSIS.refDate : nowISO();
+    var tgt = (MAP_ANALYSIS && MAP_ANALYSIS.restTarget!==undefined) ? (toNum(MAP_ANALYSIS.restTarget)||60) : 60;
+    setText("pilotMeta", "Référence : "+ref+" • Objectif repos : "+tgt+" j");
+
+    // Lots ouverts (par lot)
+    var open=[];
+    for(var i=0;i<DATA.lots.length;i++){
+      var lot=DATA.lots[i];
+      var st=lotStayAt(lot.id, ref);
+      if(!st.paddockId) continue;
+      var pad=getPaddockMeta(st.paddockId);
+      var days = (st.start && ref) ? (daysBetweenISO(st.start, ref)+1) : null;
+      if(!isFinite(days) || days<0) days=null;
+      var comp=compForDate(lot.id, ref);
+      var ugb=comp?calcUGB(comp.items||{}):0;
+      var area=pad ? (toNum(pad.area_ha)||0) : 0;
+      var ugbHa = area>0 ? (toNum(ugb)/area) : null;
+      open.push({lot:lot, pad:pad, start:st.start, days:days, ugb:ugb, ugbHa:ugbHa});
+    }
+
+    if(open.length===0){
+      setHTML("dashOpenLots", '<div class="notice">Aucun lot “ouvert” à la date de référence.</div>');
+    }else{
+      var h='<table class="table"><thead><tr><th>Lot</th><th>Paddock</th><th>Entrée</th><th class="right">Jours</th><th class="right">UGB</th><th class="right">UGB/ha</th></tr></thead><tbody>';
+      open.sort(function(a,b){ return (b.days||0)-(a.days||0); });
+      for(var j=0;j<open.length;j++){
+        var o=open[j];
+        h += '<tr>' +
+          '<td><b>'+esc(o.lot.name)+'</b></td>' +
+          '<td>'+esc(o.pad?o.pad.name:o.pad)+'</td>' +
+          '<td>'+esc(o.start||"—")+'</td>' +
+          '<td class="right">'+(o.days!==null?String(o.days):"—")+'</td>' +
+          '<td class="right">'+fmt(o.ugb,2)+'</td>' +
+          '<td class="right">'+(isFinite(o.ugbHa)?fmt(o.ugbHa,2):"—")+'</td>' +
+        '</tr>';
+      }
+      h+='</tbody></table>';
+      setHTML("dashOpenLots", h);
+    }
+
+    // Paddocks prêts (repos >= objectif) + non occupés
+    var by=computePaddockStatus(ref);
+    var ready=[], never=[];
+    for(var p=0;p<PAD_META.length;p++){
+      var pad=PAD_META[p];
+      var s=by ? by[pad.id] : null;
+      if(!s) continue;
+      if(s.status==="active") continue;
+      if(s.lastOut){
+        if(isFinite(s.restDays) && s.restDays>=tgt){
+          ready.push({pad:pad, rest:s.restDays, lastOut:s.lastOut});
+        }
+      }else{
+        never.push({pad:pad});
+      }
+    }
+
+    ready.sort(function(a,b){ return (b.rest||0)-(a.rest||0); });
+
+    var out='';
+    out += '<div class="row" style="flex-wrap:wrap; margin-bottom:8px">' +
+      '<div class="pill"><strong>Prêts</strong> <span class="muted">'+ready.length+'</span></div>' +
+      '<div class="pill"><strong>Jamais pâturés</strong> <span class="muted">'+never.length+'</span></div>' +
+    '</div>';
+
+    if(ready.length===0){
+      out += '<div class="notice warn">Aucun paddock “prêt” au regard de l’objectif.</div>';
+    }else{
+      out += '<table class="table"><thead><tr><th>Paddock</th><th>Parcelle</th><th class="right">Repos (j)</th><th>Dernière sortie</th></tr></thead><tbody>';
+      var maxRows = Math.min(ready.length, 30);
+      for(var r=0;r<maxRows;r++){
+        var it=ready[r];
+        out += '<tr>' +
+          '<td><b>'+esc(it.pad.name)+'</b></td>' +
+          '<td>'+esc(it.pad.parcel||"—")+'</td>' +
+          '<td class="right">'+String(it.rest)+'</td>' +
+          '<td>'+esc(it.lastOut)+'</td>' +
+        '</tr>';
+      }
+      out += '</tbody></table>';
+      if(ready.length>maxRows) out += '<div class="muted small" style="margin-top:6px">Liste tronquée à '+maxRows+' paddocks (sur '+ready.length+').</div>';
+    }
+
+    setHTML("dashReadyPads", out);
+
+  }catch(e){
+    console.error(e);
+  }
+}
+
+/* Carte (Canvas) */
+var MAP = { canvas:null, ctx:null, img:null, ready:false, scale:1, ox:0, oy:0, dragging:false, lastX:0, lastY:0, selParcel:"", selPaddock:"" };
+
+/* Analyse pâturage — repos */
+var MAP_ANALYSIS = { refDate:"", restTarget:60, layer:"rest", pressureMax:2 };
+var MAP_STATS = { key:"", byPaddock:{} };
+
+function isoDateToMs(iso){
+  try{
+    if(!iso || typeof iso!=="string") return NaN;
+    var p=iso.split("-");
+    if(p.length<3) return NaN;
+    return new Date(Number(p[0]), Number(p[1])-1, Number(p[2])).getTime();
+  }catch(_){ return NaN; }
+}
+function daysBetweenISO(a,b){
+  var ta=isoDateToMs(a), tb=isoDateToMs(b);
+  if(!isFinite(ta) || !isFinite(tb)) return NaN;
+  return Math.floor((tb-ta)/86400000);
+}
+function clamp(n, lo, hi){ return Math.max(lo, Math.min(hi, n)); }
+
+function computePaddockStatus(refDate){
+  var byPad = {};
+  for(var i=0;i<PAD_META.length;i++){
+    byPad[PAD_META[i].id] = { lastOut:"", activeLots:[], restDays:null, status:"never" };
+  }
+  var byLot = {};
+  for(var j=0;j<DATA.movements.length;j++){
+    var mv=DATA.movements[j];
+    if(!mv || !mv.lotId || !mv.paddockId || !mv.dt) continue;
+    if(refDate && mv.dt>refDate) continue; // pas d'anticipation
+    if(!byLot[mv.lotId]) byLot[mv.lotId]=[];
+    byLot[mv.lotId].push(mv);
+  }
+  function setLastOut(padId, dt){
+    if(!byPad[padId]) byPad[padId] = { lastOut:"", activeLots:[], restDays:null, status:"never" };
+    if(!byPad[padId].lastOut || dt>byPad[padId].lastOut) byPad[padId].lastOut = dt;
+  }
+  for(var lotId in byLot){
+    var arr = byLot[lotId].slice().sort(function(a,b){
+      if(a.dt<b.dt) return -1;
+      if(a.dt>b.dt) return 1;
+      // même jour : IN avant OUT
+      if(a.type===b.type) return 0;
+      return (a.type==="IN") ? -1 : 1;
+    });
+    var cur = "";
+    for(var k=0;k<arr.length;k++){
+      var m = arr[k];
+      if(m.type==="IN"){
+        if(cur && cur!==m.paddockId){
+          // clôture implicite si transfert non saisi
+          setLastOut(cur, m.dt);
+        }
+        cur = m.paddockId;
+      }else if(m.type==="OUT"){
+        setLastOut(m.paddockId, m.dt);
+        if(cur===m.paddockId) cur="";
+      }
+    }
+    if(cur){
+      if(!byPad[cur]) byPad[cur] = { lastOut:"", activeLots:[], restDays:null, status:"never" };
+      byPad[cur].activeLots.push(lotId);
+    }
+  }
+  for(var pid in byPad){
+    var s = byPad[pid];
+    if(s.activeLots && s.activeLots.length){
+      s.status="active";
+      s.restDays=0;
+    }else if(s.lastOut){
+      s.status="rest";
+      s.restDays = daysBetweenISO(s.lastOut, refDate);
+      if(!isFinite(s.restDays)) s.restDays=null;
+      if(s.restDays!==null && s.restDays<0) s.restDays=0;
+    }else{
+      s.status="never";
+      s.restDays=null;
+    }
+  }
+  return byPad;
+}
+function updateMapLegend(){
+  var layer = MAP_ANALYSIS.layer || "rest";
+  var tgt = toNum(MAP_ANALYSIS.restTarget || 60) || 60;
+  var pMax = toNum(MAP_ANALYSIS.pressureMax || 2) || 2;
+
+  var box=document.getElementById("pressureMaxBox");
+  if(box) box.style.display = (layer==="pressure") ? "block" : "none";
+
+  var titleEl=document.getElementById("mapLegendTitle");
+  var lblEl=document.getElementById("mapLegendLabel");
+  var ticks=document.getElementById("mapLegendTicks");
+  var bar=document.getElementById("mapLegendBar");
+
+  if(layer==="pressure"){
+    if(titleEl) titleEl.textContent = "Pression";
+    if(lblEl) lblEl.textContent = "0 → " + fmt(pMax,2) + " UGB/ha/an (année " + (MAP_STATS.pressureYear||"") + ")";
+    if(ticks){
+      var mid = pMax/2;
+      ticks.innerHTML = "<span>0</span><span>" + fmt(mid,2) + "</span><span>" + fmt(pMax,2) + "+</span>";
+    }
+    if(bar) bar.style.background = "linear-gradient(90deg, hsla(120,85%,45%,.85) 0%, hsla(60,85%,55%,.85) 50%, hsla(0,85%,55%,.85) 100%)";
+  }else{
+    if(titleEl) titleEl.textContent = "Repos";
+    if(lblEl) lblEl.textContent = "0 → " + tgt + " j";
+    if(ticks){
+      var mid2 = Math.round(tgt/2);
+      ticks.innerHTML = "<span>0 j</span><span>" + mid2 + " j</span><span>" + tgt + " j+</span>";
+    }
+    if(bar) bar.style.background = "linear-gradient(90deg, hsla(0,85%,55%,.85) 0%, hsla(60,85%,55%,.85) 50%, hsla(120,85%,45%,.85) 100%)";
+  }
+}
+
+function buildIntervalsRange(startISO, endISO){
+  var intervals=[];
+  if(!startISO || !endISO) return intervals;
+
+  for(var li=0; li<DATA.lots.length; li++){
+    var lotId=DATA.lots[li].id;
+    var moves=[];
+    for(var mi=0; mi<DATA.movements.length; mi++){
+      var m=DATA.movements[mi];
+      if(!m || m.lotId!==lotId || !m.dt) continue;
+      if(m.dt>endISO) continue;
+      moves.push(m);
+    }
+    moves.sort(function(a,b){
+      if(a.dt<b.dt) return -1;
+      if(a.dt>b.dt) return 1;
+      if(a.type===b.type) return 0;
+      // même jour : IN avant OUT (transfert = OUT du précédent)
+      return (a.type==="IN") ? -1 : 1;
+    });
+
+    var curPad="", curStart="";
+    for(var i=0;i<moves.length;i++){
+      var mv=moves[i];
+      if(mv.type==="IN"){
+        if(curPad && curPad!==mv.paddockId){
+          intervals.push({lotId:lotId, paddockId:curPad, start:curStart, end:mv.dt});
+        }
+        curPad=mv.paddockId; curStart=mv.dt;
+      }else if(mv.type==="OUT"){
+        if(curPad && curPad===mv.paddockId){
+          intervals.push({lotId:lotId, paddockId:curPad, start:curStart, end:mv.dt});
+          curPad=""; curStart="";
+        }else{
+          // OUT sans IN ouverte (donnée partielle) : ignoré pour les intervalles
+        }
+      }
+    }
+    if(curPad){
+      intervals.push({lotId:lotId, paddockId:curPad, start:curStart, end:endISO});
+    }
+  }
+
+  // Clip sur fenêtre demandée
+  var out=[];
+  for(var j=0;j<intervals.length;j++){
+    var iv=intervals[j];
+    if(iv.end<startISO) continue;
+    if(iv.start>endISO) continue;
+    var s = (iv.start<startISO) ? startISO : iv.start;
+    var e = (iv.end>endISO) ? endISO : iv.end;
+    if(s>e) continue;
+    out.push({lotId:iv.lotId, paddockId:iv.paddockId, start:s, end:e});
+  }
+  return out;
+}
+
+function computePressureByPaddock(refDate){
+  var ref = refDate || nowISO();
+  var year = String(ref).slice(0,4);
+  var start = year + "-01-01";
+  var end = year + "-12-31"; // année complète
+
+  var intervals = buildIntervalsRange(start, end);
+  var ugbDaysByPad = {};
+
+  for(var i=0;i<intervals.length;i++){
+    var iv=intervals[i];
+    var cur=iv.start;
+    while(cur<=iv.end){
+      var comp=compForDate(iv.lotId, cur);
+      var ugb=comp?calcUGB(comp.items||{}):0;
+      ugbDaysByPad[iv.paddockId] = (ugbDaysByPad[iv.paddockId]||0) + toNum(ugb);
+      cur=dateAddOne(cur);
+    }
+  }
+
+  var byPad={};
+  for(var p=0;p<PAD_META.length;p++){
+    var pad=PAD_META[p];
+    var area=toNum(pad.area_ha)||0;
+    var ugbDays=toNum(ugbDaysByPad[pad.id]||0);
+    byPad[pad.id] = {
+      ugbDays: ugbDays,
+      ugbDaysHa: area>0 ? (ugbDays/area) : null,
+      pressure: area>0 ? (ugbDays/(area*365)) : null
+    };
+  }
+  return { year:year, end:end, byPad:byPad };
+}
+
+function rebuildMapStats(force){
+  var ref = MAP_ANALYSIS.refDate || nowISO();
+  var tgt = toNum(MAP_ANALYSIS.restTarget || 60) || 60;
+  var layer = MAP_ANALYSIS.layer || "rest";
+  var pMax = toNum(MAP_ANALYSIS.pressureMax || 2) || 2;
+  var key = ref + "|" + tgt + "|" + layer + "|" + pMax + "|" + (DATA && DATA.movements ? DATA.movements.length : 0) + "|" + (DATA && DATA.compositions ? DATA.compositions.length : 0);
+  if(!force && MAP_STATS.key===key) return;
+
+  var by = computePaddockStatus(ref);
+
+  var wantPressure = (layer==="pressure") || !!MAP_ANALYSIS.wantPressure;
+  var pr = null;
+  if(wantPressure){
+    pr = computePressureByPaddock(ref);
+  }
+
+  if(pr && pr.byPad){
+    for(var pid in pr.byPad){
+      if(!by[pid]) by[pid] = { lastOut:"", activeLots:[], restDays:null, status:"never" };
+      by[pid].pressure = pr.byPad[pid].pressure;
+      by[pid].ugbDays = pr.byPad[pid].ugbDays;
+      by[pid].ugbDaysHa = pr.byPad[pid].ugbDaysHa;
+    }
+  }
+
+  MAP_STATS.byPaddock = by;
+  MAP_STATS.pressureYear = pr ? pr.year : "";
+  MAP_STATS.pressureEnd = pr ? pr.end : "";
+  MAP_STATS.key = key;
+}
+
+function restFill(restDays, target, alpha){
+  if(restDays===null || restDays===undefined) return "rgba(148,163,184," + (alpha*0.45) + ")"; // jamais pâturé = gris
+  var r = clamp(restDays/Math.max(1,target), 0, 1);
+  var hue = 0 + 120*r; // rouge -> vert
+  return "hsla(" + hue + ",85%,50%," + alpha + ")";
+}
+function pressureFill(val, max, alpha){
+  if(val===null || val===undefined || !isFinite(val)) return "rgba(148,163,184," + (alpha*0.45) + ")"; // pas de valeur = gris
+  var m = Math.max(0.000001, toNum(max)||0.000001);
+  var r = clamp(val/m, 0, 1);
+  var hue = 120 - 120*r; // vert -> rouge (pression élevée = rouge)
+  return "hsla(" + hue + ",85%,50%," + alpha + ")";
+}
+function themeForPaddock(padId, inParcel){
+  rebuildMapStats(false);
+  var st = MAP_STATS.byPaddock ? MAP_STATS.byPaddock[padId] : null;
+  var baseAlpha = inParcel ? 0.18 : 0.10;
+  var strokeAlpha = inParcel ? 0.55 : 0.25;
+
+  if(MAP.selParcel && !inParcel){
+    baseAlpha *= 0.55;
+    strokeAlpha *= 0.55;
+  }
+
+  if(st && st.status==="active"){
+    return { fill:"rgba(96,165,250," + baseAlpha + ")", stroke:"rgba(96,165,250," + Math.min(0.9, strokeAlpha+0.35) + ")", lw:1 };
+  }
+
+  var layer = MAP_ANALYSIS.layer || "rest";
+  if(layer==="pressure"){
+    var max = toNum(MAP_ANALYSIS.pressureMax || 2) || 2;
+    var v = st ? st.pressure : null;
+    return { fill: pressureFill(v, max, baseAlpha), stroke: pressureFill(v, max, strokeAlpha), lw:1 };
+  }
+
+  var tgt = toNum(MAP_ANALYSIS.restTarget || 60) || 60;
+  var rd = st ? st.restDays : null;
+  return { fill: restFill(rd, tgt, baseAlpha), stroke: restFill(rd, tgt, strokeAlpha), lw:1 };
+}
+function lotNames(ids){
+  if(!ids || !ids.length) return "—";
+  var names=[];
+  for(var i=0;i<ids.length;i++){
+    var l=byId(DATA.lots, ids[i]);
+    names.push(l?l.name:ids[i]);
+  }
+  return names.join(", ");
+}
+
+
+function initMap(){
+  if(MAP.canvas) return;
+  MAP.canvas=document.getElementById("mapCanvas"); if(!MAP.canvas) return;
+  MAP.ctx=MAP.canvas.getContext("2d");
+  MAP.img=new Image();
+  MAP.img.onload=function(){ MAP.ready=true; fitMap(); drawMap(); };
+  MAP.img.src=GEO.raster.img;
+
+  MAP.canvas.addEventListener("mousedown", function(e){ MAP.dragging=true; MAP.lastX=e.clientX; MAP.lastY=e.clientY; });
+  window.addEventListener("mousemove", function(e){ if(!MAP.dragging) return; var dx=e.clientX-MAP.lastX; var dy=e.clientY-MAP.lastY; MAP.ox+=dx; MAP.oy+=dy; MAP.lastX=e.clientX; MAP.lastY=e.clientY; drawMap(); });
+  window.addEventListener("mouseup", function(){ MAP.dragging=false; });
+
+  MAP.canvas.addEventListener("touchstart", function(e){ if(e.touches.length!==1) return; MAP.dragging=true; MAP.lastX=e.touches[0].clientX; MAP.lastY=e.touches[0].clientY; }, {passive:true});
+  MAP.canvas.addEventListener("touchmove", function(e){ if(!MAP.dragging||e.touches.length!==1) return; var dx=e.touches[0].clientX-MAP.lastX; var dy=e.touches[0].clientY-MAP.lastY; MAP.ox+=dx; MAP.oy+=dy; MAP.lastX=e.touches[0].clientX; MAP.lastY=e.touches[0].clientY; drawMap(); }, {passive:true});
+  MAP.canvas.addEventListener("touchend", function(){ MAP.dragging=false; });
+
+  MAP.canvas.addEventListener("click", function(e){ onMapClick(e); });
+
+  window.addEventListener("resize", function(){ resizeCanvas(); drawMap(); });
+  resizeCanvas();
+}
+function resizeCanvas(){
+  if(!MAP.canvas) return;
+  var rect=MAP.canvas.getBoundingClientRect();
+  var dpr=Math.max(1, Math.min(2, window.devicePixelRatio||1));
+  MAP.canvas.width=Math.max(300, Math.floor(rect.width*dpr));
+  MAP.canvas.height=Math.max(220, Math.floor(rect.height*dpr));
+  MAP.ctx.setTransform(1,0,0,1,0,0);
+  MAP.ctx.scale(dpr,dpr);
+}
+function fitMap(){
+  resizeCanvas();
+  var rect=MAP.canvas.getBoundingClientRect();
+  var w=rect.width, h=rect.height;
+  var ww=(GEO.raster.right - GEO.raster.left);
+  var hh=(GEO.raster.top - GEO.raster.bottom);
+  var s=Math.min(w/ww, h/hh);
+  MAP.scale=s;
+  MAP.ox=(w-ww*s)/2;
+  MAP.oy=(h-hh*s)/2;
+}
+function worldToScreen(x,y){
+  var sx=MAP.ox + (x - GEO.raster.left)*MAP.scale;
+  var sy=MAP.oy + (GEO.raster.top - y)*MAP.scale;
+  return [sx,sy];
+}
+function screenToWorld(sx,sy){
+  var x=GEO.raster.left + (sx - MAP.ox)/MAP.scale;
+  var y=GEO.raster.top - (sy - MAP.oy)/MAP.scale;
+  return [x,y];
+}
+function zoomAt(factor){
+  var rect=MAP.canvas.getBoundingClientRect();
+  var cx=rect.width/2, cy=rect.height/2;
+  var w=screenToWorld(cx,cy);
+  MAP.scale*=factor;
+  var s=worldToScreen(w[0], w[1]);
+  MAP.ox += (cx - s[0]);
+  MAP.oy += (cy - s[1]);
+  drawMap();
+}
+function asMultiPolygon(coords){
+  if(!coords || !coords.length) return [];
+  if(typeof coords[0][0][0] === "number") return [coords];
+  return coords;
+}
+function drawPoly(coords, stroke, fill, lw){
+  var ctx=MAP.ctx;
+  var mp=asMultiPolygon(coords);
+  ctx.beginPath();
+  for(var p=0;p<mp.length;p++){
+    var rings=mp[p];
+    for(var r=0;r<rings.length;r++){
+      var ring=rings[r];
+      for(var i=0;i<ring.length;i++){
+        var pt=ring[i];
+        var s=worldToScreen(pt[0], pt[1]);
+        if(i===0) ctx.moveTo(s[0], s[1]); else ctx.lineTo(s[0], s[1]);
+      }
+      ctx.closePath();
+    }
+  }
+  if(fill){ ctx.fillStyle=fill; ctx.fill("evenodd"); }
+  if(stroke){ ctx.strokeStyle=stroke; ctx.lineWidth=lw||1; ctx.stroke(); }
+}
+function drawMap(){
+  if(!MAP.canvas) return;
+  var ctx=MAP.ctx;
+  var rect=MAP.canvas.getBoundingClientRect();
+  ctx.clearRect(0,0,rect.width,rect.height);
+
+  if(MAP.ready){
+    var x0=MAP.ox, y0=MAP.oy;
+    var ww=(GEO.raster.right - GEO.raster.left)*MAP.scale;
+    var hh=(GEO.raster.top - GEO.raster.bottom)*MAP.scale;
+    ctx.drawImage(MAP.img, x0, y0, ww, hh);
+  }else{
+    ctx.fillStyle="rgba(255,255,255,.03)";
+    ctx.fillRect(0,0,rect.width,rect.height);
+  }
+
+  for(var i=0;i<GEO.parcels.length;i++){
+    var pr=GEO.parcels[i];
+    var stroke=(MAP.selParcel===pr.name) ? "rgba(96,165,250,.95)" : "rgba(232,237,247,.35)";
+    var fill=(MAP.selParcel===pr.name) ? "rgba(96,165,250,.10)" : "rgba(0,0,0,0)";
+    drawPoly(pr.geom, stroke, fill, 2);
+  }
+  for(var j=0;j<GEO.paddocks.length;j++){
+    var pd=GEO.paddocks[j];
+    var inParcel = (!MAP.selParcel) ? true : (pd.group===MAP.selParcel);
+
+    var th = themeForPaddock(pd.id, inParcel);
+    var fill2 = th.fill;
+    var stroke2 = th.stroke;
+    var lw = th.lw || 1;
+
+    if(MAP.selPaddock===pd.id){
+      stroke2="rgba(34,197,94,.95)";
+      lw=2;
+    }
+    drawPoly(pd.geom, stroke2, fill2, lw);
+  }
+}
+function pointInRing(pt, ring){
+  var x=pt[0], y=pt[1], inside=false;
+  for(var i=0,j=ring.length-1; i<ring.length; j=i++){
+    var xi=ring[i][0], yi=ring[i][1];
+    var xj=ring[j][0], yj=ring[j][1];
+    var intersect=((yi>y)!==(yj>y)) && (x < (xj-xi)*(y-yi)/(yj-yi+0.0)+xi);
+    if(intersect) inside=!inside;
+  }
+  return inside;
+}
+function pointInPoly(pt, coords){
+  var mp=asMultiPolygon(coords);
+  for(var p=0;p<mp.length;p++){
+    var rings=mp[p];
+    if(!rings.length) continue;
+    if(!pointInRing(pt, rings[0])) continue;
+    var inHole=false;
+    for(var r=1;r<rings.length;r++) if(pointInRing(pt, rings[r])){ inHole=true; break; }
+    if(!inHole) return true;
+  }
+  return false;
+}
+function zoomToBBox(bbox){
+  var rect=MAP.canvas.getBoundingClientRect();
+  var w=rect.width, h=rect.height;
+  var ww=bbox[2]-bbox[0], hh=bbox[3]-bbox[1];
+  var s=Math.min(w/ww, h/hh) * 0.92;
+  MAP.scale=s;
+  var cx=(bbox[0]+bbox[2])/2, cy=(bbox[1]+bbox[3])/2;
+  MAP.ox = w/2 - (cx - GEO.raster.left)*MAP.scale;
+  MAP.oy = h/2 - (GEO.raster.top - cy)*MAP.scale;
+}
+function syncMapUI(){
+  rebuildMapStats(false);
+  try{ updateMapLegend(); }catch(_){ }
+
+  setText("selParcel", MAP.selParcel ? titleCase(MAP.selParcel) : "—");
+  setText("selPaddock", MAP.selPaddock ? MAP.selPaddock : "—");
+
+  var pad=getPaddockMeta(MAP.selPaddock);
+  setText("selArea", pad && pad.area_ha ? fmt(pad.area_ha,4) : "—");
+
+  var st = (MAP.selPaddock && MAP_STATS.byPaddock) ? MAP_STATS.byPaddock[MAP.selPaddock] : null;
+
+  var restTxt = "—";
+  if(st){
+    if(st.status==="active") restTxt = "0";
+    else if(st.restDays!==null && st.restDays!==undefined) restTxt = String(st.restDays);
+  }
+  setText("selRest", restTxt);
+  setText("selLastOut", st && st.lastOut ? st.lastOut : "—");
+  setText("selActiveLots", st && st.activeLots && st.activeLots.length ? lotNames(st.activeLots) : "—");
+
+  var prTxt="—";
+  if(st && isFinite(st.pressure)) prTxt = fmt(st.pressure,3);
+  setText("selPressure", prTxt);
+
+  // Alerte décisionnelle (repos / occupation)
+  var da=document.getElementById("decisionAlert");
+  if(da){
+    var msg="";
+    var cls="notice";
+    var tgt = toNum(MAP_ANALYSIS.restTarget || 60) || 60;
+
+    if(!MAP.selPaddock){
+      msg="";
+    }else if(st && st.status==="active"){
+      msg = "ℹ️ Paddock actuellement pâturé (lot(s) : " + lotNames(st.activeLots||[]) + ").";
+      cls="notice warn";
+    }else if(st && st.lastOut){
+      if(st.restDays!==null && st.restDays!==undefined && st.restDays < tgt){
+        msg = "⚠️ Repos insuffisant : " + st.restDays + " j (objectif " + tgt + " j).";
+        cls="notice warn";
+      }else if(st.restDays!==null && st.restDays!==undefined){
+        msg = "✅ Repos OK : " + st.restDays + " j (objectif " + tgt + " j).";
+        cls="notice ok";
+      }else{
+        msg = "ℹ️ Repos non calculable (dates incohérentes).";
+        cls="notice warn";
+      }
+    }else{
+      msg = "ℹ️ Aucun historique de pâturage (repos inconnu).";
+      cls="notice";
+    }
+
+    da.className = cls;
+    da.textContent = msg;
+    da.style.display = msg ? "block" : "none";
+  }
+
+  var btn=document.getElementById("btnClearParcel");
+  if(btn) btn.textContent = MAP.selParcel ? ("Parcelle : " + titleCase(MAP.selParcel) + " (vider)") : "Parcelle : aucune";
+}
+function onMapClick(e){
+  var rect=MAP.canvas.getBoundingClientRect();
+  var sx=e.clientX-rect.left, sy=e.clientY-rect.top;
+  var w=screenToWorld(sx,sy);
+
+  if(!MAP.selParcel){
+    var pickedParcel=null;
+    for(var i=0;i<GEO.parcels.length;i++){
+      var pr=GEO.parcels[i];
+      if(w[0]<pr.bbox[0]||w[0]>pr.bbox[2]||w[1]<pr.bbox[1]||w[1]>pr.bbox[3]) continue;
+      if(pointInPoly(w, pr.geom)){ pickedParcel=pr; break; }
+    }
+    if(pickedParcel){
+      MAP.selParcel=pickedParcel.name;
+      MAP.selPaddock="";
+      zoomToBBox(pickedParcel.bbox);
+      syncMapUI(); drawMap();
+      return;
+    }
+  }
+
+  var picked=null;
+  for(var j=0;j<GEO.paddocks.length;j++){
+    var pd=GEO.paddocks[j];
+    if(MAP.selParcel && pd.group!==MAP.selParcel) continue;
+    if(w[0]<pd.bbox[0]||w[0]>pd.bbox[2]||w[1]<pd.bbox[1]||w[1]>pd.bbox[3]) continue;
+    if(pointInPoly(w, pd.geom)){ picked=pd; break; }
+  }
+  if(!picked && MAP.selParcel){
+    for(var i2=0;i2<GEO.parcels.length;i2++){
+      var pr2=GEO.parcels[i2];
+      if(w[0]<pr2.bbox[0]||w[0]>pr2.bbox[2]||w[1]<pr2.bbox[1]||w[1]>pr2.bbox[3]) continue;
+      if(pointInPoly(w, pr2.geom)){
+        MAP.selParcel=pr2.name; MAP.selPaddock="";
+        zoomToBBox(pr2.bbox);
+        syncMapUI(); drawMap();
+        return;
+      }
+    }
+  }
+  if(picked){
+    MAP.selPaddock=picked.id;
+    setDraftPaddock(picked.id);
+    if(MAP.selParcel) DATA.ui.lastSelectedParcel=MAP.selParcel;
+    syncMapUI(); drawMap();
+  }
+}
+
+/* Navigation */
+function goto(viewKey){
+  var tabs=document.querySelectorAll('#mainTabs .tab');
+  for(var i=0;i<tabs.length;i++){
+    var t=tabs[i];
+    if(t.getAttribute('data-view')===viewKey) t.classList.add("active"); else t.classList.remove("active");
+  }
+  var views={saisie:"view-saisie", lots:"view-lots", admin:"view-admin"};
+  for(var k in views){
+    var el=document.getElementById(views[k]);
+    if(!el) continue;
+    if(k===viewKey) el.classList.add("active"); else el.classList.remove("active");
+  }
+  window.scrollTo(0,0);
+  if(viewKey==="lots") renderLotsView();
+  if(viewKey==="admin"){ renderCats(); renderJournal(); renderDash(); renderYearSel(); }
+  if(viewKey==="saisie"){ initMap(); syncMapUI(); drawMap(); renderSaisie(); }
+}
+function gotoAdmin(sub){
+  var tabs=document.querySelectorAll('#adminTabs .subtab');
+  for(var i=0;i<tabs.length;i++){
+    var t=tabs[i];
+    if(t.getAttribute('data-sub')===sub) t.classList.add("active"); else t.classList.remove("active");
+  }
+  var subs={refs:"sub-refs", export:"sub-export", journal:"sub-journal", dash:"sub-dash"};
+  for(var k in subs){
+    var el=document.getElementById(subs[k]);
+    if(!el) continue;
+    if(k===sub) el.classList.add("active"); else el.classList.remove("active");
+  }
+  if(sub==="journal") renderJournal();
+  if(sub==="dash") renderDash();
+  if(sub==="refs") renderCats();
+  if(sub==="export") renderYearSel();
+}
+
+/* Actions */
+function createLot(){
+  var inp=document.getElementById("newLotName");
+  var name=inp?inp.value.trim():"";
+  if(!name) return;
+  var id=uuid();
+  DATA.lots.push({id:id, name:name});
+  EDIT_LOT_ID=id;
+  if(inp) inp.value="";
+  saveData();
+}
+function lotCurrentPaddockAt(lotId, dt){
+  var arr=[];
+  for(var i=0;i<DATA.movements.length;i++){
+    var m=DATA.movements[i];
+    if(!m || m.lotId!==lotId || !m.dt) continue;
+    if(dt && m.dt>dt) continue;
+    arr.push(m);
+  }
+  arr.sort(function(a,b){
+    if(a.dt<b.dt) return -1;
+    if(a.dt>b.dt) return 1;
+    if(a.type===b.type) return 0;
+    // même jour : IN avant OUT (transfert = OUT du précédent)
+    return (a.type==="IN") ? -1 : 1;
+  });
+  var cur="";
+  for(var k=0;k<arr.length;k++){
+    var mv=arr[k];
+    if(mv.type==="IN"){
+      cur=mv.paddockId;
+    }else if(mv.type==="OUT"){
+      if(cur===mv.paddockId) cur="";
+    }
+  }
+  return cur;
+}
+
+function validateMove(){
+  var d=document.getElementById("mvDate");
+  DRAFT.dt=d?(d.value||nowISO()):nowISO();
+  if(!(DRAFT.dt && (DRAFT.type==="IN"||DRAFT.type==="OUT") && DRAFT.lotId && DRAFT.paddockId)) return;
+
+  var lot = byId(DATA.lots, DRAFT.lotId);
+  var pad = getPaddockMeta(DRAFT.paddockId);
+  var typeLabel2 = (DRAFT.type==="IN" ? "Entrée" : "Sortie");
+
+  var _lenBefore = DATA.movements.length;
+
+  var tgt = toNum(MAP_ANALYSIS.restTarget || 60) || 60;
+  var curStay = lotStayAt(DRAFT.lotId, DRAFT.dt);
+  var curPad = curStay ? curStay.paddockId : "";
+
+  // Contrôles cohérence (assistance)
+  if(DRAFT.type==="IN"){
+    if(curPad && curPad===DRAFT.paddockId){
+      if(!confirm("Le lot semble déjà présent dans ce paddock à cette date.\n\nEnregistrer une Entrée redondante ?")) return;
+    }
+
+    // Paddock occupé par d'autres lots ?
+    try{
+      var st=computePaddockStatus(DRAFT.dt);
+      var s=st ? st[DRAFT.paddockId] : null;
+      if(s && s.status==="active"){
+        var others=(s.activeLots||[]).filter(function(x){ return x!==DRAFT.lotId; });
+        if(others.length){
+          if(!confirm("⚠️ Paddock déjà occupé à cette date (lot(s) : "+lotNames(others)+").\n\nContinuer quand même ?")) return;
+        }
+      }
+      if(s && s.lastOut && isFinite(s.restDays) && s.restDays < tgt){
+        if(!confirm("⚠️ Repos insuffisant : "+s.restDays+" j (objectif "+tgt+" j).\n\nContinuer quand même ?")) return;
+      }
+    }catch(_){}
+
+  }else if(DRAFT.type==="OUT"){
+    if(!curPad){
+      alert("Incohérence : ce lot n'est pas “ouvert” à cette date (aucune Entrée en cours).\n\nAstuce : vérifiez la date ou enregistrez d'abord une Entrée.");
+      return;
+    }
+    if(curPad !== DRAFT.paddockId){
+      var curMeta=getPaddockMeta(curPad);
+      if(confirm("⚠️ À cette date, le lot semble être dans : "+(curMeta?curMeta.name:curPad)+"\n(et non : "+(pad?pad.name:DRAFT.paddockId)+").\n\nSortir le paddock courant à la place ?")){
+        DRAFT.paddockId = curPad;
+        pad = curMeta || getPaddockMeta(DRAFT.paddockId);
+      }else{
+        return;
+      }
+    }
+  }
+
+  var autoTransfer = !(DATA && DATA.ui && DATA.ui.autoTransfer===false);
+  var autoMsg="";
+
+  // Transfert auto (Entrée) : sortie du paddock précédent pour CE lot uniquement
+  if(autoTransfer && DRAFT.type==="IN"){
+    var prev = lotCurrentPaddockAt(DRAFT.lotId, DRAFT.dt);
+    if(prev && prev!==DRAFT.paddockId){
+      var already=false;
+      for(var i=0;i<DATA.movements.length;i++){
+        var m=DATA.movements[i];
+        if(m && m.lotId===DRAFT.lotId && m.dt===DRAFT.dt && m.type==="OUT" && m.paddockId===prev){ already=true; break; }
+      }
+      if(!already){
+        var prevPad=getPaddockMeta(prev);
+        DATA.movements.push({id:uuid(), dt:DRAFT.dt, type:"OUT", lotId:DRAFT.lotId, paddockId:prev, auto:true});
+        autoMsg = " • sortie auto " + (prevPad?prevPad.name:prev);
+      }
+    }
+  }
+
+  // Anti-doublon simple (même lot, même date, même type, même paddock)
+  for(var k=0;k<DATA.movements.length;k++){
+    var ex=DATA.movements[k];
+    if(ex && ex.lotId===DRAFT.lotId && ex.dt===DRAFT.dt && ex.type===DRAFT.type && ex.paddockId===DRAFT.paddockId){
+      if(!confirm("Un mouvement identique existe déjà (même lot/date/type/paddock).\n\nAjouter un doublon ?")) return;
+      break;
+    }
+  }
+
+  DATA.movements.push({id:uuid(), dt:DRAFT.dt, type:DRAFT.type, lotId:DRAFT.lotId, paddockId:DRAFT.paddockId});
+  saveData();
+
+  try{
+    var _newMoves = DATA.movements.slice(_lenBefore);
+    // Envoi (Apps Script) : on queue puis on flush (non bloquant)
+    queueMovesToSheet(_newMoves);
+    flushMovesToSheetSoon();
+  }catch(_){ }
+
+  showToast("✅ Enregistré — " + typeLabel2 + " • " + (lot?lot.name:"") + " • " + (pad?pad.name:"") + autoMsg);
+
+  try{ if(navigator && navigator.vibrate) navigator.vibrate([30,20,30]); }catch(_){ }
+
+  var b=document.getElementById("btnValidate");
+  if(b){
+    b.classList.add("confirmed");
+    b.textContent="✅ Enregistré";
+    setTimeout(function(){
+      b.classList.remove("confirmed");
+      b.textContent="Valider";
+    }, 900);
+  }
+
+  clearDraft();
+}
+function clearDraft(){ DRAFT.paddockId=""; if(MAP){ MAP.selPaddock=""; syncMapUI(); drawMap(); } renderDraft(); }
+function backupJSON(){
+  var stamp=(new Date()).toISOString().slice(0,16).replaceAll("-","").replaceAll(":","").replace("T","_");
+  var name="sauvegarde_paturage_"+stamp+".json";
+  downloadFile(name, JSON.stringify(DATA,null,2), "application/json");
+  markBackupSaved(name);
+}
+function restoreJSON(file){
+  var r=new FileReader();
+  r.onload=function(){
+    try{ DATA=normalizeData(JSON.parse(r.result)); saveData(); alert("Restauration OK"); }
+    catch(e){ alert("Fichier invalide"); }
+  };
+  r.readAsText(file);
+}
+function resetAll(){
+  if(!confirm("Réinitialiser toutes les données ?")) return;
+  localStorage.removeItem(STORE_KEY);
+  DATA=defaultData();
+  resetDraft();
+  saveData();
+}
+function loadDemo(){
+  DATA=defaultData();
+  DATA.lots=[{id:"lot1",name:"Lot A"},{id:"lot2",name:"Lot B"}];
+  DATA.compositions=[
+    {id:uuid(), lotId:"lot1", eff: nowISO(), items:{adulte:10, jeune:3}},
+    {id:uuid(), lotId:"lot2", eff: nowISO(), items:{trait:5}}
+  ];
+  DATA.movements=[{id:uuid(), dt: nowISO(), type:"IN", lotId:"lot1", paddockId:GEO.paddocks[0].id}];
+  saveData();
+}
+function renderYearSel(){
+  var y=new Date().getFullYear();
+  var years=[y-1,y,y+1];
+  var sel=document.getElementById("yearSel");
+  if(!sel) return;
+  var opts="";
+  for(var i=0;i<years.length;i++) opts+='<option value="'+years[i]+'">'+years[i]+'</option>';
+  sel.innerHTML=opts;
+  sel.value=String(y);
+}
+function renderAll(){
+  renderSaisie();
+  renderLotsView();
+  renderCats();
+  renderJournal();
+  renderDash();
+  renderYearSel();
+}
+
+/* INIT */
+var DATA=null;
+document.addEventListener("DOMContentLoaded", function(){
+  applyCustomMapIfAny();
+  buildPadMeta();
+  DATA=loadData();
+  resetDraft();
+  initStoragePersist();
+  try{ renderBackupStatus(); }catch(_){ }
+
+
+  var main=document.querySelectorAll('#mainTabs .tab');
+  for(var i=0;i<main.length;i++) main[i].addEventListener('click', function(){ goto(this.getAttribute('data-view')); });
+  var at=document.querySelectorAll('#adminTabs .subtab');
+  for(var j=0;j<at.length;j++) at[j].addEventListener('click', function(){ gotoAdmin(this.getAttribute('data-sub')); });
+
+  on("btnCreateLot","click",createLot);
+  on("newLotName","keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); createLot(); } });
+  on("btnSaveComp","click",saveComposition);
+  on("btnDupLast","click",dupLast);
+  on("btnRenameLot","click",renameLot);
+  on("btnDeleteLot","click",deleteLot);
+
+  on("btnIN","click",function(){ setDraftType("IN"); });
+  on("btnOUT","click",function(){ setDraftType("OUT"); });
+  on("mvDate","change",function(){ DRAFT.dt=this.value||nowISO(); renderDraft(); });
+
+  on("refDate","change",function(){
+    MAP_ANALYSIS.refDate = this.value || nowISO();
+    if(DATA && DATA.ui) DATA.ui.mapRefDate = MAP_ANALYSIS.refDate;
+    saveUIOnly();
+    rebuildMapStats(true); syncMapUI(); drawMap();
+  });
+  on("restTarget","change",function(){
+    var v = toNum(this.value) || 60;
+    v = Math.max(1, Math.min(365, v));
+    this.value = String(v);
+    MAP_ANALYSIS.restTarget = v;
+    if(DATA && DATA.ui) DATA.ui.restTarget = v;
+    // maj légende
+    updateMapLegend();
+    saveUIOnly();
+    rebuildMapStats(true); syncMapUI(); drawMap();
+  });
+
+  on("mapLayer","change",function(){
+    var v = this.value || "rest";
+    MAP_ANALYSIS.layer = v;
+    if(v==="pressure") MAP_ANALYSIS.wantPressure = true;
+    if(DATA && DATA.ui) DATA.ui.mapLayer = v;
+    updateMapLegend();
+    saveUIOnly();
+    rebuildMapStats(true); syncMapUI(); drawMap();
+  });
+  on("pressureMax","change",function(){
+    var v = toNum(this.value) || 2;
+    v = Math.max(0.1, Math.min(100, v));
+    this.value = String(v);
+    MAP_ANALYSIS.pressureMax = v;
+    if(DATA && DATA.ui) DATA.ui.pressureMax = v;
+    updateMapLegend();
+    saveUIOnly();
+    rebuildMapStats(true); syncMapUI(); drawMap();
+  });
+
+  on("btnValidate","click",validateMove);
+  on("btnClearDraft","click",clearDraft);
+  on("btnUndoLast","click",undoLastMove);
+
+  on("btnMapReset","click",function(){ fitMap(); drawMap(); });
+  on("btnClearParcel","click",function(){ MAP.selParcel=""; MAP.selPaddock=""; fitMap(); syncMapUI(); drawMap(); });
+  on("btnZoomIn","click",function(){ zoomAt(1.25); });
+  on("btnZoomOut","click",function(){ zoomAt(0.8); });
+on("btnSaveCats","click",saveCatsFromUI);
+  on("btnImportMap","click",importMapFiles);
+  on("btnResetMap","click",resetMapToDefault);
+  var fp=document.getElementById("fileParcels");
+  if(fp) fp.addEventListener("change", function(e){ setText("fileParcelsName", e.target.files && e.target.files[0] ? e.target.files[0].name : "—"); });
+  var fd=document.getElementById("filePaddocks");
+  if(fd) fd.addEventListener("change", function(e){ setText("filePaddocksName", e.target.files && e.target.files[0] ? e.target.files[0].name : "—"); });
+  setText("fileParcelsName","—"); setText("filePaddocksName","—"); setMapImportMsg("—");
+  setText("exportMsg","—");
+
+  on("btnExportMoves","click",function(){ var y=Number(document.getElementById("yearSel").value); exportMoves(y); });
+  on("btnExportComps","click",exportComps);
+  on("btnExportDaily","click",function(){ var y=Number(document.getElementById("yearSel").value); exportDaily(y); });
+  on("btnExportAll","click",function(){ var y=Number(document.getElementById("yearSel").value); exportAllZip(y); });
+  on("btnPrepareEmail","click",prepareEmail);
+  on("btnShareAll","click",function(){ shareLastExport(); });
+
+  on("btnBkBarExport","click",function(){
+    var yEl=document.getElementById("yearSel");
+    var y = yEl ? Number(yEl.value) : (new Date()).getFullYear();
+    exportAllZip(y);
+  });
+  on("btnBkBarShare","click",function(){ shareLastExport(); });
+
+  on("btnQuickBackup","click",function(){
+    var yEl=document.getElementById("yearSel");
+    var y = yEl ? Number(yEl.value) : (new Date()).getFullYear();
+    exportAllZip(y);
+  });
+  on("btnQuickShare","click",function(){ shareLastExport(); });
+
+
+  on("btnBackup","click",backupJSON);
+  var rf=document.getElementById("restoreFile");
+  if(rf) rf.addEventListener("change", function(e){ if(e.target.files && e.target.files[0]) restoreJSON(e.target.files[0]); e.target.value=""; });
+
+  on("btnResetAll","click",resetAll);
+  on("btnApplyFilters","click",applyJournalFilters);
+  on("btnLoadDemo","click",loadDemo);
+
+  // Sync Google Sheet (Apps Script)
+  on("btnSaveSheetSecret","click",saveSheetSecretFromUI);
+  on("sheetSecret","keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); saveSheetSecretFromUI(); } });
+  on("btnFlushSheet","click",flushMovesToSheet);
+  on("btnTestSheet","click",testSheetSync);
+
+  // Import fond raster (image + world file)
+  on("btnImportRaster","click",importRaster);
+  on("btnResetRaster","click",resetRaster);
+  var fr=document.getElementById("fileRaster");
+  if(fr) fr.addEventListener("change", function(e){ setText("fileRasterName", e.target.files && e.target.files[0] ? e.target.files[0].name : "—"); });
+  var fw=document.getElementById("fileWorld");
+  if(fw) fw.addEventListener("change", function(e){ setText("fileWorldName", e.target.files && e.target.files[0] ? e.target.files[0].name : "—"); });
+  setText("fileRasterName","—"); setText("fileWorldName","—"); 
+  try{ setRasterMsg("—"); }catch(_){}
+
+  // Init statuses + apply persisted raster + flush queue if configured
+  try{ var _ss=document.getElementById("sheetSecret"); if(_ss){ _ss.value = getSheetSecret(); } }catch(_){}
+  try{ renderSheetSyncStatus(); }catch(_){}
+  try{ applyRasterFromStorage(); }catch(_){}
+  try{ if(getSheetSecret() && readSheetQueue().length) flushMovesToSheetSoon(); }catch(_){}
+
+  goto("saisie");
+  renderAll();
+});
+</script>
+</body>
+</html>
