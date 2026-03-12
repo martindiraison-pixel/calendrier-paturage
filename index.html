@@ -452,7 +452,10 @@ input[type="number"].mini{width:92px}
             <div id="exportMsg" class="muted small" style="margin-top:10px">—</div>
             <div class="hr"></div>
             <h2>Synchronisation (Google Sheet)</h2>
-            <div class="notice small">Optionnel : si vous utilisez un <b>Google Apps Script</b> (Web App) pour enregistrer les mouvements dans un tableur en ligne, collez ici le <b>secret</b> défini dans Apps Script. Sans secret, la synchro est désactivée.</div>
+            <div class="notice small">Optionnel : si vous utilisez un <b>Google Apps Script</b> (Web App) pour enregistrer les mouvements dans un tableur en ligne, renseignez ici l’<b>URL Web App</b> Apps Script (…/exec) et le <b>secret</b> défini dans Apps Script. Sans URL ou sans secret, la synchro est désactivée.</div>
+            <div class="row" style="margin-top:10px;flex-wrap:wrap">
+              <input id="sheetUrl" placeholder="URL Web App Apps Script…/exec" style="flex:1 1 520px">
+            </div>
             <div class="row" style="margin-top:10px;flex-wrap:wrap">
               <input id="sheetSecret" placeholder="Secret Apps Script…" style="flex:1 1 260px">
               <button class="btn info" id="btnSaveSheetSecret" type="button">Enregistrer</button>
@@ -999,10 +1002,23 @@ var STORE_KEY = "paturage.simple.v1";
 
 
 /* Sync Google Sheet (Apps Script Web App) */
-var SHEET_PUSH_URL = "https://script.google.com/macros/s/AKfycbyl1B1S-2UzpHehy21nJr3ktVcz-BiUzKubzFqKQQfQY6wYibpewoPBu2xtmmGenjem9w/exec";
+var SHEET_PUSH_URL = null; // utilisé via getSheetUrl()
 var SHEET_SECRET_KEY = "paturage.sheet.secret.v1";
 var SHEET_QUEUE_KEY  = "paturage.sheet.pending.v1";
+var SHEET_URL_KEY    = "paturage.sheet.url.v1";
+var SHEET_PUSH_URL_DEFAULT = "https://script.google.com/macros/s/AKfycbyl1B1S-2UzpHehy21nJr3ktVcz-BiUzKubzFqKQQfQY6wYibpewoPBu2xtmmGenjem9w/exec";
 
+function getSheetUrl(){
+  try{
+    var v = String(localStorage.getItem(SHEET_URL_KEY) || "").trim();
+    return v || SHEET_PUSH_URL_DEFAULT;
+  }catch(_){
+    return SHEET_PUSH_URL_DEFAULT;
+  }
+}
+function setSheetUrl(v){
+  try{ localStorage.setItem(SHEET_URL_KEY, String(v||"").trim()); }catch(_){}
+}
 function getSheetSecret(){
   try{ return String(localStorage.getItem(SHEET_SECRET_KEY) || "").trim(); }catch(_){ return ""; }
 }
@@ -1080,7 +1096,8 @@ function pushMoveToSheet(move){
     }).toString();
 
     // Mode compatibilité maximal : GET beacon (fonctionne mieux que POST depuis certains contextes)
-    var url = SHEET_PUSH_URL + (SHEET_PUSH_URL.indexOf("?")>=0 ? "&" : "?") + qs;
+    var base = getSheetUrl();
+    var url = base + (base.indexOf("?")>=0 ? "&" : "?") + qs;
 
     // Envoyer via un chargement "image" (pas de CORS, pas de preflight)
     if(!window.__sheetImgKeep) window.__sheetImgKeep = [];
@@ -1132,22 +1149,30 @@ function renderSheetSyncStatus(){
   try{
     var el=document.getElementById("sheetSyncMsg");
     if(!el) return;
+
+    var url = getSheetUrl();
     var sec = getSheetSecret();
     var q = readSheetQueue();
 
-    // refléter la valeur persistée dans le champ (utile après rafraîchissement)
-    var inp=document.getElementById("sheetSecret");
-    if(inp && sec && (!inp.value || String(inp.value).trim()==="")) inp.value = sec;
+    // refléter la valeur persistée dans les champs (utile après rafraîchissement)
+    var inpUrl=document.getElementById("sheetUrl");
+    if(inpUrl && url && (!inpUrl.value || String(inpUrl.value).trim()==="")) inpUrl.value = url;
+    var inpSec=document.getElementById("sheetSecret");
+    if(inpSec && sec && (!inpSec.value || String(inpSec.value).trim()==="")) inpSec.value = sec;
 
     var last=null;
     try{ last = JSON.parse(localStorage.getItem("paturage.sheet.last.v1")||"null"); }catch(_){}
 
+    if(!url){
+      el.textContent = "Synchro désactivée (URL non renseignée).";
+      return;
+    }
     if(!sec){
       el.textContent = "Synchro désactivée (secret non renseigné).";
       return;
     }
 
-    var line = "Secret configuré • En attente : " + q.length + " mouvement(s).";
+    var line = "URL configurée • Secret configuré • En attente : " + q.length + " mouvement(s).";
     if(last && last.ts){
       var dt=new Date(last.ts);
       line += " • Dernier envoi : " + (last.status||"?") + " (" + (last.info||"") + ") à " + dt.toLocaleTimeString();
@@ -1157,17 +1182,24 @@ function renderSheetSyncStatus(){
 }
 
 function saveSheetSecretFromUI(){
+  var u=document.getElementById("sheetUrl");
+  var url = u ? String(u.value||"").trim() : "";
+  if(url) setSheetUrl(url);
+
   var inp=document.getElementById("sheetSecret");
   var v = inp ? String(inp.value||"").trim() : "";
   setSheetSecret(v);
 
   // Vérification (utile si stockage désactivé / privé)
+  var backUrl = getSheetUrl();
+  if(u) u.value = backUrl || url;
+
   var back = getSheetSecret();
   if(inp) inp.value = back || v;
 
   renderSheetSyncStatus();
-  if(v && back===v){
-    showToast("✅ Secret enregistré");
+  if((v && back===v) && (backUrl && backUrl.length>0)){
+    showToast("✅ URL + secret enregistrés");
     flushMovesToSheetSoon();
   }else if(v && back!==v){
     showToast("⚠️ Impossible d'enregistrer (stockage navigateur bloqué ?)");
@@ -1178,7 +1210,9 @@ function saveSheetSecretFromUI(){
 
 function testSheetSync(){
   try{
+    var url=getSheetUrl();
     var sec=getSheetSecret();
+    if(!url){ showToast("⚠️ Renseignez l\'URL."); return; }
     if(!sec){ showToast("⚠️ Renseignez le secret."); return; }
     var dummy = { id:"test_" + Date.now(), dt: nowISO(), type:"IN", lotId:"test", paddockId:"test", auto:false };
     var ok = pushMoveToSheet(dummy);
@@ -3307,6 +3341,7 @@ on("btnSaveCats","click",saveCatsFromUI);
 
   // Sync Google Sheet (Apps Script)
   on("btnSaveSheetSecret","click",saveSheetSecretFromUI);
+  on("sheetUrl","keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); saveSheetSecretFromUI(); } });
   on("sheetSecret","keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); saveSheetSecretFromUI(); } });
   on("btnFlushSheet","click",flushMovesToSheet);
   on("btnTestSheet","click",testSheetSync);
