@@ -464,6 +464,11 @@ input[type="number"].mini{width:92px}
             </div>
             <div id="sheetSyncMsg" class="muted small" style="margin-top:8px">—</div>
 
+<div class="row" style="justify-content:flex-end;margin-top:10px;flex-wrap:wrap">
+  <button class="btn" id="btnSyncRefs" type="button">Synchroniser référentiels</button>
+</div>
+<div class="muted small" id="sheetRefsMsg" style="margin-top:8px">—</div>
+
             <div class="muted small" style="margin-top:10px">
               Calendrier journalier = <b>1 ligne / jour</b> uniquement quand un lot pâture (Option 1).
             </div>
@@ -1247,6 +1252,131 @@ function testSheetSync(){
 window.addEventListener("online", function(){ flushMovesToSheetSoon(); });
 
 
+/* Synchronisation Google Sheet — Référentiels (Lots/Catégories/Compositions) */
+
+function setSheetRefsMsg(txt){
+  var el=document.getElementById("sheetRefsMsg");
+  if(el) el.textContent = txt || "—";
+}
+
+function sheetSendGET(params){
+  try{
+    var base = getSheetUrl();
+    if(!base) return false;
+    var qs = new URLSearchParams(params||{}).toString();
+    var url = base + (base.indexOf("?")>=0 ? "&" : "?") + qs;
+
+    if(!window.__sheetImgKeep) window.__sheetImgKeep = [];
+    var img = new Image();
+    img.referrerPolicy = "no-referrer";
+    window.__sheetImgKeep.push(img);
+    if(window.__sheetImgKeep.length > 30) window.__sheetImgKeep.splice(0, window.__sheetImgKeep.length-30);
+    img.onload = function(){};
+    img.onerror = function(){};
+    img.src = url;
+    return true;
+  }catch(e){
+    console.warn(e);
+    return false;
+  }
+}
+
+function sheetSendPOST(params){
+  try{
+    var base = getSheetUrl();
+    if(!base) return false;
+    var body = new URLSearchParams(params||{}).toString();
+    // no-cors : on ne lit pas la réponse, mais l'envoi part
+    fetch(base, {
+      method:"POST",
+      mode:"no-cors",
+      headers:{ "Content-Type":"application/x-www-form-urlencoded" },
+      body: body
+    }).catch(function(){});
+    return true;
+  }catch(e){
+    console.warn(e);
+    return false;
+  }
+}
+
+function pushLotToSheet(lot){
+  try{
+    var sec=getSheetSecret();
+    if(!sec || !lot || !lot.id) return false;
+    return sheetSendGET({
+      secret: sec,
+      entity: "lot",
+      op: "upsert",
+      lotId: lot.id,
+      lotName: lot.name || "",
+      deviceId: getDeviceId()
+    });
+  }catch(_){ return false; }
+}
+
+function pushCategoryToSheet(cat){
+  try{
+    var sec=getSheetSecret();
+    if(!sec || !cat || !cat.id) return false;
+    return sheetSendGET({
+      secret: sec,
+      entity: "category",
+      op: "upsert",
+      catId: cat.id,
+      catName: cat.name || "",
+      ugb: (isFinite(cat.ugb) ? String(cat.ugb) : ""),
+      deviceId: getDeviceId()
+    });
+  }catch(_){ return false; }
+}
+
+function pushCompositionToSheet(comp){
+  try{
+    var sec=getSheetSecret();
+    if(!sec || !comp || !comp.lotId || !comp.eff) return false;
+    var key = comp.lotId + "@" + comp.eff;
+    var items = comp.items || {};
+    var ugbTotal = "";
+    try{ ugbTotal = fmt(calcUGB(items),2); }catch(_){}
+
+    // POST pour éviter les limitations de longueur d'URL (items_json peut être long)
+    return sheetSendPOST({
+      secret: sec,
+      entity: "composition",
+      op: "upsert",
+      compKey: key,
+      lotId: comp.lotId,
+      eff: comp.eff,
+      ugb_total: ugbTotal,
+      items_json: JSON.stringify(items),
+      deviceId: getDeviceId()
+    });
+  }catch(_){ return false; }
+}
+
+function syncRefsToSheet(){
+  try{
+    var sec=getSheetSecret();
+    var url=getSheetUrl();
+    if(!sec || !url){
+      setSheetRefsMsg("Renseignez l’URL et le secret avant de synchroniser.");
+      return;
+    }
+    var nLots=0, nCats=0, nComps=0;
+
+    for(var i=0;i<DATA.lots.length;i++){ if(pushLotToSheet(DATA.lots[i])) nLots++; }
+    for(var j=0;j<DATA.categories.length;j++){ if(pushCategoryToSheet(DATA.categories[j])) nCats++; }
+    for(var k=0;k<DATA.compositions.length;k++){ if(pushCompositionToSheet(DATA.compositions[k])) nComps++; }
+
+    setSheetRefsMsg("Synchronisation lancée — Lots: " + nLots + " • Catégories: " + nCats + " • Compositions: " + nComps + ".");
+    showToast("📡 Sync référentiels lancée");
+  }catch(e){
+    console.warn(e);
+    setSheetRefsMsg("Erreur sync référentiels.");
+  }
+}
+
 /* Utilitaires */
 function uuid(){ return "id_" + Math.random().toString(16).slice(2) + "_" + Date.now().toString(16); }
 function nowISO(){ var d=new Date(); var m=("0"+(d.getMonth()+1)).slice(-2); var day=("0"+d.getDate()).slice(-2); return d.getFullYear()+"-"+m+"-"+day; }
@@ -1799,6 +1929,8 @@ function saveComposition(){
   DATA.compositions=kept;
   COMP_DRAFT=null;
   saveData();
+
+  try{ var c=compForDate(EDIT_LOT_ID, document.getElementById("compDate")? (document.getElementById("compDate").value||nowISO()):nowISO()); if(c) pushCompositionToSheet(c); }catch(_){ }
 }
 function dupLast(){
   if(!EDIT_LOT_ID) return;
@@ -1818,12 +1950,16 @@ function renameLot(){
   if(!name) return;
   lot.name=name.trim();
   saveData();
+
+  try{ var lot=byId(DATA.lots, EDIT_LOT_ID); if(lot) pushLotToSheet(lot); }catch(_){ }
 }
 function deleteLot(){
   if(!EDIT_LOT_ID) return;
   if(!confirm("Supprimer ce lot ?")) return;
   var out=[]; for(var i=0;i<DATA.lots.length;i++) if(DATA.lots[i].id!==EDIT_LOT_ID) out.push(DATA.lots[i]);
   DATA.lots=out; EDIT_LOT_ID=""; saveData();
+
+  try{ var sec=getSheetSecret(); if(sec){ sheetSendGET({secret:sec, entity:"lot", op:"delete", lotId:EDIT_LOT_ID, deviceId:getDeviceId()}); } }catch(_){ }
 }
 
 /* Journal */
@@ -2272,6 +2408,8 @@ function addCategoryFromUI(){
   if(nEl) nEl.value="";
   if(uEl) uEl.value="";
   saveData();
+
+  try{ var c=DATA.categories.length?DATA.categories[DATA.categories.length-1]:null; if(c) pushCategoryToSheet(c); }catch(_){ }
 }
 
 function addCategoryFromComp(){
@@ -2312,6 +2450,8 @@ function deleteCategory(catId){
     }
   }
   saveData();
+
+  try{ var sec=getSheetSecret(); if(sec){ sheetSendGET({secret:sec, entity:"category", op:"delete", catId:catId, deviceId:getDeviceId()}); } }catch(_){ }
 }
 
 function saveCatsFromUI(){
@@ -2322,6 +2462,8 @@ function saveCatsFromUI(){
   for(var j=0;j<names.length;j++){ var id=names[j].getAttribute('data-cid'); if(map[id]) map[id].name=names[j].value.trim()||map[id].name; }
   for(var k=0;k<ugb.length;k++){ var id2=ugb[k].getAttribute('data-uid'); if(map[id2]) map[id2].ugb=toNum(ugb[k].value); }
   saveData();
+
+  try{ for(var i=0;i<DATA.categories.length;i++) pushCategoryToSheet(DATA.categories[i]); }catch(_){ }
 }
 
 /* Dashboard */
@@ -3060,6 +3202,8 @@ function createLot(){
   EDIT_LOT_ID=id;
   if(inp) inp.value="";
   saveData();
+
+  try{ var lot=byId(DATA.lots, EDIT_LOT_ID) || byId(DATA.lots, (DATA.lots.length?DATA.lots[DATA.lots.length-1].id:"")); if(lot) pushLotToSheet(lot); }catch(_){ }
 }
 function lotCurrentPaddockAt(lotId, dt){
   var arr=[];
@@ -3365,6 +3509,7 @@ on("btnSaveCats","click",saveCatsFromUI);
   on("sheetSecret","keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); saveSheetSecretFromUI(); } });
   on("btnFlushSheet","click",flushMovesToSheet);
   on("btnTestSheet","click",testSheetSync);
+  on("btnSyncRefs","click",syncRefsToSheet);
 
   // Import fond raster (image + world file)
   on("btnImportRaster","click",importRaster);
