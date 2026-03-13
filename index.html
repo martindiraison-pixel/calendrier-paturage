@@ -145,7 +145,7 @@ input[type="number"].mini{width:92px}
 <body>
 <header>
   <div class="wrap">
-    <h1>Suivi pâturage — saisie rapide <span class="muted small" style="font-weight:600">v8.2</span></h1>
+    <h1>Suivi pâturage — saisie rapide <span class="muted small" style="font-weight:600">v8.3</span></h1>
     <nav class="tabs" id="mainTabs">
       <div class="tab active" data-view="saisie">Saisie</div>
       <div class="tab" data-view="lots">Lots</div>
@@ -153,14 +153,6 @@ input[type="number"].mini{width:92px}
     </nav>
   </div>
 </header>
-
-      <div class="pill small"><strong>Non sauvegardés</strong> <span id="bkBarUnsaved" class="muted">0</span></div>
-      <button class="btn small" id="btnBkBarExport" type="button">Sauvegarder (ZIP)</button>
-      <button class="btn small" id="btnBkBarShare" type="button">Partager</button>
-    </div>
-    <div id="bkBarHint" class="muted small" style="margin-top:6px">—</div>
-  </div>
-</div>
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
@@ -3394,7 +3386,7 @@ function renderAll(){
 /* INIT */
 var DATA=null;
 document.addEventListener("DOMContentLoaded", function(){
-  console.log("Suivi pâturage build v8.2");
+  console.log("Suivi pâturage build v8.3");
   applyCustomMapIfAny();
   buildPadMeta();
   DATA=loadData();
