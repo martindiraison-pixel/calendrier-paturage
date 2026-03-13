@@ -136,6 +136,11 @@ input[type="number"].mini{width:92px}
 .pill.small{ font-size:12px; padding:6px 10px; }
 .notice.ok{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.08); }
 </style>
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="#0b1220">
 </head>
 <body>
 <header>
@@ -149,10 +154,6 @@ input[type="number"].mini{width:92px}
   </div>
 </header>
 
-<div id="backupBar" class="backupBar">
-  <div class="wrap">
-    <div class="row" style="gap:8px;flex-wrap:wrap">
-      <div class="pill small"><strong>Sauvegarde</strong> <span id="bkBarLast" class="muted">—</span></div>
       <div class="pill small"><strong>Non sauvegardés</strong> <span id="bkBarUnsaved" class="muted">0</span></div>
       <button class="btn small" id="btnBkBarExport" type="button">Sauvegarder (ZIP)</button>
       <button class="btn small" id="btnBkBarShare" type="button">Partager</button>
