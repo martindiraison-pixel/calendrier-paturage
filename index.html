@@ -1084,13 +1084,34 @@ function pushMoveToSheet(move){
       return false;
     }
 
+    // Enrichissement (dénormalisation pour analyses dans Google Sheet)
+    var lot = byId(DATA.lots, move.lotId);
+    var pad = getPaddockMeta(move.paddockId);
+
+    var lotName = lot ? lot.name : "";
+    var paddockName = pad ? pad.name : "";
+    var parcelle = pad ? (pad.group || "") : "";
+    var surfaceHa = pad && isFinite(pad.area_ha) ? fmt(pad.area_ha,4) : "";
+
+    var ugbTotal = "";
+    try{
+      var comp = compForDate(move.lotId, move.dt);
+      var ugb = comp ? calcUGB(comp.items||{}) : 0;
+      if(isFinite(ugb)) ugbTotal = fmt(ugb,2);
+    }catch(_){}
+
     var qs = new URLSearchParams({
       secret: sec,
       moveId: move.id,
       dt: move.dt || "",
       type: move.type || "",
       lotId: move.lotId || "",
+      lotName: lotName,
       paddockId: move.paddockId || "",
+      paddockName: paddockName,
+      parcelle: parcelle,
+      surface_ha: surfaceHa,
+      ugb_total: ugbTotal,
       auto: move.auto ? "1" : "",
       deviceId: getDeviceId()
     }).toString();
@@ -1104,11 +1125,10 @@ function pushMoveToSheet(move){
     var img = new Image();
     img.referrerPolicy = "no-referrer";
     window.__sheetImgKeep.push(img);
-    // limiter la taille du tableau pour éviter fuite mémoire
     if(window.__sheetImgKeep.length > 20) window.__sheetImgKeep.splice(0, window.__sheetImgKeep.length-20);
 
     img.onload = function(){ _setSheetLast("sent","GET image"); };
-    img.onerror = function(){ _setSheetLast("sent?","GET image (no ack)"); }; // la requête a souvent été envoyée malgré onerror
+    img.onerror = function(){ _setSheetLast("sent?","GET image (no ack)"); };
     img.src = url;
 
     _setSheetLast("sent","GET image");
